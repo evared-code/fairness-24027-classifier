@@ -1,0 +1,97 @@
+<svg viewBox="0 0 1000 460" width="1000" height="460" role="img" aria-label="Diagram: Vercel's static hosting only sends the tool's files to the visitor's browser. Route A: the browser sends the visitor's own key directly to the model provider. Route B: the browser sends the request, encoded or not, to the API proxy function at /api/proxy in the same Vercel project, which decodes it in memory and forwards it to the provider. The key is readable by the browser and provider, and on route B also by the proxy function; never by the static file hosting." xmlns="http://www.w3.org/2000/svg">
+<style>
+  .kf-box{fill:#ffffff;stroke:#c3cad5;stroke-width:1.2}
+  .kf-browser{fill:#f4f7fc;stroke:#1f4e8c;stroke-width:1.5}
+  .kf-owner{fill:#ffffff;stroke-dasharray:5 4}
+  .kf-dot{fill:#c3cad5}
+  .kf-title{font:600 16px Charter,Georgia,serif;fill:#18202c}
+  .kf-sub{font:13px system-ui,-apple-system,Segoe UI,sans-serif;fill:#465061}
+  .kf-strong{font-weight:600;fill:#18202c}
+  .kf-prov{font:600 13px system-ui,-apple-system,Segoe UI,sans-serif;fill:#18202c}
+  .kf-dom{font:10px ui-monospace,Menlo,Consolas,monospace;fill:#465061}
+  .kf-key{fill:#fff4d6;stroke:#c98500}
+  .kf-keyring,.kf-keystem{fill:none;stroke:#855c00;stroke-width:2}
+  .kf-keytext{font:600 12.5px system-ui,-apple-system,Segoe UI,sans-serif;fill:#855c00}
+  .kf-label{font:12px system-ui,-apple-system,Segoe UI,sans-serif;fill:#465061}
+  .kf-num{font-weight:700;fill:#1f4e8c}
+  .kf-files{stroke:#8a93a1;stroke-width:1.5;stroke-dasharray:5 4}
+  .kf-req{stroke:#1f4e8c;stroke-width:2}
+  .kf-res{stroke:#1baf7a;stroke-width:2}
+  .kf-head-files{fill:#8a93a1}.kf-head-req{fill:#1f4e8c}.kf-head-res{fill:#1baf7a}
+  .kf-none{stroke:#c3cad5;stroke-width:1.5;stroke-dasharray:3 4}
+  .kf-x line{stroke:#d03b3b;stroke-width:2.5}
+  .kf-rule{stroke:#d5dae2}
+  @media (prefers-color-scheme: dark){
+    .kf-box{fill:#161b22;stroke:#39414d}.kf-browser{fill:#1a2230;stroke:#8db3e8}.kf-owner{fill:#161b22}
+    .kf-title,.kf-strong,.kf-prov{fill:#e4e8ee}.kf-sub,.kf-dom,.kf-label{fill:#aeb6c2}
+    .kf-key{fill:#2b2410;stroke:#c98500}.kf-keyring,.kf-keystem{stroke:#fab219}.kf-keytext{fill:#fab219}
+    .kf-num{fill:#8db3e8}.kf-req{stroke:#8db3e8}.kf-head-req{fill:#8db3e8}.kf-rule{stroke:#2e3540}
+  }
+</style>
+<defs>
+  <marker id="kf-head-kf-files" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-files" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-req" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-res" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-res" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<g>
+  <rect class="kf-box" x="20" y="30" width="230" height="150" rx="10"/>
+  <text class="kf-title" x="38" y="64">Vercel: static files</text>
+  <text class="kf-sub" x="38" y="86">sends the tool's files</text>
+  <text class="kf-sub" x="38" y="104">(HTML, CSS, JavaScript)</text>
+  <text class="kf-sub kf-strong" x="38" y="140">never receives keys or data</text>
+</g>
+<g>
+  <rect class="kf-box kf-browser" x="340" y="30" width="270" height="180" rx="10"/>
+  <circle class="kf-dot" cx="356" cy="46" r="3.5"/><circle class="kf-dot" cx="368" cy="46" r="3.5"/><circle class="kf-dot" cx="380" cy="46" r="3.5"/>
+  <text class="kf-title" x="358" y="80">Visitor's browser</text>
+  <text class="kf-sub" x="358" y="100">runs the tool; nothing is installed</text>
+  <rect class="kf-key" x="358" y="112" width="228" height="28" rx="14"/>
+  <circle class="kf-keyring" cx="376" cy="126" r="6"/><line class="kf-keystem" x1="382" y1="126" x2="396" y2="126"/><line class="kf-keystem" x1="392" y1="126" x2="392" y2="131"/>
+  <text class="kf-keytext" x="404" y="131">visitor's own key typed here</text>
+  <text class="kf-sub" x="358" y="162">key held in memory; stored only</text>
+  <text class="kf-sub" x="358" y="178">if "Remember keys" is ticked</text>
+  <text class="kf-sub" x="358" y="198">saves report, CSV, JSON (no keys)</text>
+</g>
+<g>
+  <rect class="kf-box kf-owner" x="340" y="290" width="270" height="150" rx="10"/>
+  <text class="kf-title" x="358" y="322">Vercel: API proxy function</text>
+  <text class="kf-sub" x="358" y="344">/api/proxy, same project; route B only</text>
+  <text class="kf-sub" x="358" y="366">decodes encoded requests in memory</text>
+  <text class="kf-sub" x="358" y="386">forwards only to listed providers</text>
+  <text class="kf-sub kf-strong" x="358" y="418">writes no logs, stores no keys</text>
+</g>
+<g>
+  <rect class="kf-box" x="760" y="30" width="220" height="410" rx="10"/>
+  <text class="kf-title" x="778" y="64">Model providers</text>
+  <text class="kf-prov" x="778" y="96">Anthropic (Claude)</text><text class="kf-dom" x="778" y="113">api.anthropic.com</text>
+  <text class="kf-prov" x="778" y="143">OpenAI (GPT)</text><text class="kf-dom" x="778" y="160">api.openai.com</text>
+  <text class="kf-prov" x="778" y="190">Google (Gemini)</text><text class="kf-dom" x="778" y="207">generativelanguage.googleapis.com</text>
+  <text class="kf-prov" x="778" y="237">OpenAI-compatible service</text><text class="kf-dom" x="778" y="254">the base URL you enter</text>
+  <line class="kf-rule" x1="778" y1="280" x2="962" y2="280"/>
+  <text class="kf-sub kf-strong" x="778" y="304">First three accept browser</text>
+  <text class="kf-sub kf-strong" x="778" y="320">calls (CORS)</text>
+  <text class="kf-sub" x="778" y="338">tested 13 October 2026</text>
+  <text class="kf-sub" x="778" y="356">Others: try Check key,</text>
+  <text class="kf-sub" x="778" y="372">else use route B</text>
+  <text class="kf-sub kf-strong" x="778" y="406">Usage is billed to the</text>
+  <text class="kf-sub kf-strong" x="778" y="424">visitor's own key</text>
+</g>
+<g>
+  <rect class="kf-box" x="20" y="260" width="230" height="180" rx="10"/>
+  <text class="kf-title" x="38" y="292">Who can read the key</text>
+  <text class="kf-sub kf-strong" x="38" y="318"><tspan class="kf-num">A</tspan> Direct</text>
+  <text class="kf-sub" x="38" y="336">browser and provider</text>
+  <text class="kf-sub kf-strong" x="38" y="362"><tspan class="kf-num">B</tspan> Via API proxy</text>
+  <text class="kf-sub" x="38" y="380">browser, proxy function</text>
+  <text class="kf-sub" x="38" y="398">(in memory), provider</text>
+  <text class="kf-sub kf-strong" x="38" y="424">Never: the static files</text>
+</g>
+<line class="kf-files" x1="250" y1="100" x2="336" y2="100" marker-end="url(#kf-head-kf-files)"/><text class="kf-label" x="293" y="92" text-anchor="middle">tool files</text>
+<line class="kf-req" x1="610" y1="86" x2="756" y2="86" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="78" text-anchor="middle"><tspan class="kf-num">A</tspan> request + key</text>
+<line class="kf-res" x1="756" y1="130" x2="614" y2="130" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="150" text-anchor="middle">answer</text>
+<line class="kf-req" x1="450" y1="210" x2="450" y2="286" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="440" y="244" text-anchor="end"><tspan class="kf-num">B</tspan> request + key,</text>
+<text class="kf-label" x="440" y="260" text-anchor="end">encoded or not</text>
+<line class="kf-res" x1="520" y1="290" x2="520" y2="214" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="530" y="256" text-anchor="start">answer</text>
+<line class="kf-req" x1="610" y1="334" x2="756" y2="334" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="326" text-anchor="middle">forwarded + key</text>
+<line class="kf-res" x1="756" y1="378" x2="614" y2="378" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="398" text-anchor="middle">answer</text>
+</svg>

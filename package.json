@@ -1,0 +1,19 @@
+{
+  "name": "tr24027-fairness-classifier",
+  "version": "1.5.0",
+  "description": "Classify design decision options by primary source of potential bias (ISO/IEC TR 24027) with LLM self-consistency and cross-model agreement. Runs in the browser.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/core.test.mjs && node test/providers.test.mjs && node test/proxy.test.mjs && node test/vercel.test.mjs && node build.mjs",
+    "build": "node build.mjs",
+    "start": "node dev-server.mjs",
+    "proxy:keygen": "node proxy/keygen.mjs > proxy/private-key.json",
+    "deploy": "npx vercel --prod",
+    "proxy:hash": "node -e \"const c=require('crypto'),f=require('fs');console.log('SHA-256 of proxy/handler.js:',c.createHash('sha256').update(f.readFileSync('proxy/handler.js')).digest('hex'))\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

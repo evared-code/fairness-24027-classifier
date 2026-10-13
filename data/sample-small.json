@@ -1,0 +1,55 @@
+{
+  "title": "Small sample (4 options) for a quick test run",
+  "context": "The system is an eCommerce metaverse: an immersive 3D virtual world (web and native mobile apps) where users shop, interact through avatars, use AI-aided features such as recommendations, moderation and monitoring, and complete secure transactions.",
+  "decisions": [
+    {
+      "id": "S-D1",
+      "source": "Practitioner",
+      "category": "Immersive experience",
+      "question": "How to accommodate eCommerce metaverse users with disabilities or access inequality?",
+      "options": [
+        {
+          "id": "S-D1-O1",
+          "text": "Assistive technology compatibility"
+        },
+        {
+          "id": "S-D1-O2",
+          "text": "Multilingual support"
+        }
+      ]
+    },
+    {
+      "id": "S-D2",
+      "source": "Industry",
+      "category": "Bias Mitigation Strategy",
+      "question": "How to identify and mitigate AI bias?",
+      "options": [
+        {
+          "id": "S-D2-O1",
+          "text": "Clean training data",
+          "drivers": [
+            "Bias (N)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S-D3",
+      "source": "Practitioner",
+      "category": "Trust and safety",
+      "question": "How to avoid breaches of security and privacy violations?",
+      "options": [
+        {
+          "id": "S-D3-O1",
+          "text": "Strong data encryption",
+          "drivers": [
+            {
+              "name": "Security",
+              "effect": "++"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Not deployed to Vercel (the deployment comes from the GitHub repository; this file also covers `npx vercel`)
+test/
+.github/
+proxy/private-key.json
+dev-server.mjs
+node_modules/

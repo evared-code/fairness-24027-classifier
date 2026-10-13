@@ -1,0 +1,1023 @@
+{
+  "title": "Ethical considerations for AI-metaverse integration: industry voice",
+  "context": "The system is an AI-integrated metaverse platform with eCommerce: an immersive 3D virtual world (web and native mobile apps) where users shop, interact through avatars, and use AI-aided features such as recommendations, content moderation, monitoring and customer service. Each design decision is an ethical architectural design decision for integrating AI into this metaverse.",
+  "notes": "Industry voice. Source of truth: the QOC model ADD4Ethics.py (codeable_models) behind the manuscript 'From Practitioner to Industry Voice: LLM-RAG Assisted Ground Truth Theory for Ethical ADD in AI-Metaverse Integration' (SHA-256 of ADD4Ethics.py: 82a99c0cf81afa4416b97815fe83cd89eb82f6b389328f45efe03db0d8c64481). Questions = decision classes (the three grouping decisions are left out), options = design_solution classes linked to each question (full text; options linked to several questions appear under each), drivers = force links of each option with their effect (++, +, N). 'paper_label' is the short label used in the manuscript's tables, where one exists. Questions without options in the model are classified at question level. Category numbers follow the manuscript (the model's Category 8 is C7 here).",
+  "decisions": [
+    {
+      "id": "P2-C1-Q1",
+      "source": "Industry",
+      "category": "Digital Identity Framework",
+      "question": "How does accountability change according to the levels of user influence over an AI system?",
+      "background": "S09",
+      "options": [
+        {
+          "id": "P2-C1-Q1-O1",
+          "text": "Define different levels of accountability based on user influence over AI system decisions",
+          "drivers": [
+            "Accountability (+)"
+          ],
+          "paper_label": "Define accountability levels",
+          "background": "S09"
+        },
+        {
+          "id": "P2-C1-Q1-O2",
+          "text": "Establish clear guidelines for responsibility assignment in hybrid human-AI decision-making",
+          "drivers": [
+            "Accountability (+)"
+          ],
+          "paper_label": "Clear responsibility guidelines",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C1-Q2",
+      "source": "Industry",
+      "category": "Digital Identity Framework",
+      "question": "How to Document the AI system's role and decision-making authority clearly?",
+      "background": "S09",
+      "options": [
+        {
+          "id": "P2-C1-Q2-O1",
+          "text": "AI is embedded in a human decision-making process",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "Human-AI embedded process",
+          "background": "S09"
+        },
+        {
+          "id": "P2-C1-Q2-O2",
+          "text": "AI is making decisions on its own",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "AI autonomous decisions",
+          "background": "S09"
+        },
+        {
+          "id": "P2-C1-Q2-O3",
+          "text": "It is hybrid",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "Hybrid approach",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C1-Q3",
+      "source": "Industry",
+      "category": "Digital Identity Framework",
+      "question": "Which group's values are expressed by our AI system and why?",
+      "background": "S09",
+      "options": [
+        {
+          "id": "P2-C1-Q3-O1",
+          "text": "Identify and explicitly state the values embedded in the AI system",
+          "drivers": [
+            "Explainability (+)"
+          ],
+          "paper_label": "Identify embedded values",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C1-Q4",
+      "source": "Industry",
+      "category": "Digital Identity Framework",
+      "question": "How do we change or adjust the values reflected by our AI system as our values evolve over time?",
+      "background": "S09",
+      "options": [
+        {
+          "id": "P2-C1-Q4-O1",
+          "text": "Establish team consensus process for value identification and prioritization",
+          "drivers": [
+            "Trust (+)"
+          ],
+          "paper_label": "Team consensus process",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C2-Q1",
+      "source": "Industry",
+      "category": "Bias Mitigation Strategy",
+      "question": "How to prevent bias in AI systems?",
+      "background": "S26",
+      "options": [
+        {
+          "id": "P2-C2-Q1-O1",
+          "text": "inclusive product language initiative to prevent bias reinforcement in technical content",
+          "drivers": [
+            "Bias (N)"
+          ],
+          "rationale": "developer mindset",
+          "paper_label": "Inclusive language initiative",
+          "background": "S26"
+        }
+      ]
+    },
+    {
+      "id": "P2-C2-Q2",
+      "source": "Industry",
+      "category": "Bias Mitigation Strategy",
+      "question": "How to identify and mitigate AI bias?",
+      "background": "S02, S09",
+      "options": [
+        {
+          "id": "P2-C2-Q2-O1",
+          "text": "Ensure clean unbiased training data",
+          "drivers": [
+            "Bias (N)"
+          ],
+          "rationale": "ensuring clean unbiased",
+          "paper_label": "Clean training data",
+          "background": "S02"
+        },
+        {
+          "id": "P2-C2-Q2-O2",
+          "text": "Real-time analysis of AI brings to light both intentional and unintentional biases",
+          "drivers": [
+            "Bias (+)"
+          ],
+          "rationale": "realtime analysis",
+          "paper_label": "Real-time bias analysis",
+          "background": "S09"
+        },
+        {
+          "id": "P2-C2-Q2-O3",
+          "text": "Model verification techniques for rigorous testing and validation of AI models",
+          "drivers": [
+            "Bias (+)"
+          ],
+          "rationale": "model verification",
+          "paper_label": "Model verification",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C2-Q3",
+      "source": "Industry",
+      "category": "Bias Mitigation Strategy",
+      "question": "How to mitigate AI risks using techniques?",
+      "background": "S11, S26",
+      "options": [
+        {
+          "id": "P2-C2-Q3-O1",
+          "text": "AI risk assessment is the starting point for Responsible AI",
+          "drivers": [
+            "Trust (+)",
+            "Responsible (+)",
+            "Human Centric (+)",
+            "Governance (+)",
+            "Bias (+)",
+            "Safety (++)"
+          ],
+          "paper_label": "Safety protocols",
+          "background": "S01, S21"
+        },
+        {
+          "id": "P2-C2-Q3-O2",
+          "text": "Deploy automated bias detection and mitigation tools throughout AI lifecycle",
+          "drivers": [
+            "Bias (+)"
+          ],
+          "paper_label": "Automated bias detection",
+          "background": "S11"
+        },
+        {
+          "id": "P2-C2-Q3-O3",
+          "text": "Consequence Scanning - responsible innovation methodology developed by U.K.-based think tank Doteveryo",
+          "drivers": [
+            "Trust (N)"
+          ],
+          "paper_label": "Consequence scanning",
+          "background": "S26"
+        }
+      ]
+    },
+    {
+      "id": "P2-C3-Q1",
+      "source": "Industry",
+      "category": "Data Protection Standards",
+      "question": "How to protect data privacy in AI?",
+      "background": "S07",
+      "options": [
+        {
+          "id": "P2-C3-Q1-O1",
+          "text": "Prioritize data privacy from the outset by implementing best practices in data encryption, anonymization, and secure data storage",
+          "drivers": [
+            "Privacy (N)",
+            "Ethics (N)"
+          ],
+          "paper_label": "Privacy-by-design",
+          "background": "S07"
+        },
+        {
+          "id": "P2-C3-Q1-O2",
+          "text": "Create and adhere to a well-defined ethical AI framework to guide the development and deployment of AI solutions",
+          "drivers": [
+            "Privacy (N)",
+            "Ethics (N)"
+          ],
+          "paper_label": "Ethical AI framework",
+          "background": "S07"
+        },
+        {
+          "id": "P2-C3-Q1-O3",
+          "text": "Invest in a scalable and robust data infrastructure with secure data management practices",
+          "drivers": [
+            "Privacy (N)"
+          ],
+          "paper_label": "Scalable infrastructure",
+          "background": "S07"
+        },
+        {
+          "id": "P2-C3-Q1-O4",
+          "text": "Conduct regular audits and assessments of AI systems to ensure compliance with privacy regulations",
+          "drivers": [
+            "Privacy (N)",
+            "Ethics (N)"
+          ],
+          "paper_label": "Compliance audits",
+          "background": "S01, S03, S07"
+        },
+        {
+          "id": "P2-C3-Q1-O5",
+          "text": "Include guidelines for fairness, transparency, accountability, and the mitigation of biases",
+          "drivers": [
+            "Bias (N)",
+            "Fairness (N)",
+            "Transparency (N)",
+            "Accountability (N)"
+          ],
+          "paper_label": "Fairness guidelines",
+          "background": "S07"
+        },
+        {
+          "id": "P2-C3-Q1-O6",
+          "text": "Implement comprehensive data protection measures and privacy controls",
+          "drivers": [
+            "Privacy (+)"
+          ],
+          "paper_label": "Data protection measures",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C3-Q2",
+      "source": "Industry",
+      "category": "Data Protection Standards",
+      "question": "What regulatory and compliance issues should organizations consider in AI adoption?",
+      "background": "S26",
+      "options": [
+        {
+          "id": "P2-C3-Q2-O1",
+          "text": "Implement AI-powered fraud detection software to minimize costs and enhance consumer identity verifications",
+          "drivers": [
+            "Trust (+)"
+          ],
+          "paper_label": "AI fraud detection",
+          "background": "S09"
+        },
+        {
+          "id": "P2-C3-Q2-O2",
+          "text": "AI-assisted customer service automation",
+          "drivers": [
+            "Trust (+)",
+            "Transparency (+)"
+          ],
+          "background": "S04"
+        }
+      ]
+    },
+    {
+      "id": "P2-C3-Q3",
+      "source": "Industry",
+      "category": "Data Protection Standards",
+      "question": "How to manage Content Safety, Privacy, and Security?",
+      "background": "S11",
+      "options": [
+        {
+          "id": "P2-C3-Q3-O1",
+          "text": "Develop comprehensive privacy protection and data governance framework, including localized LLMs and private LLM development to mitigate data exposure risks",
+          "drivers": [
+            "Privacy (+)"
+          ],
+          "paper_label": "Privacy framework",
+          "background": "S11"
+        },
+        {
+          "id": "P2-C3-Q3-O2",
+          "text": "Implement multi-layered security controls and monitoring systems",
+          "drivers": [
+            "Security (++)"
+          ],
+          "paper_label": "Multi-layer security",
+          "background": "S11"
+        },
+        {
+          "id": "P2-C3-Q3-O3",
+          "text": "Implement audit trails and operational monitoring for full system transparencyn",
+          "drivers": [
+            "Transparency (++)"
+          ],
+          "paper_label": "Audit trails",
+          "background": "S11"
+        }
+      ]
+    },
+    {
+      "id": "P2-C4-Q1",
+      "source": "Industry",
+      "category": "Content Algorithm Design",
+      "question": "How to manage AI risks using content filtering?",
+      "background": "S01, S10",
+      "options": [
+        {
+          "id": "P2-C4-Q1-O1",
+          "text": "Filter content to protect privacy and prevent data leakage",
+          "drivers": [
+            "Transparency (++)"
+          ],
+          "paper_label": "Privacy protection filter",
+          "background": "S10"
+        },
+        {
+          "id": "P2-C4-Q1-O2",
+          "text": "Implement content filtering at platform level to reduce harmful content generation",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "Platform-level filtering",
+          "background": "S10"
+        },
+        {
+          "id": "P2-C4-Q1-O3",
+          "text": "Implement content filtering at application level for targeted risk mitigation",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "Application-level filter",
+          "background": "S10"
+        }
+      ]
+    },
+    {
+      "id": "P2-C4-Q2",
+      "source": "Industry",
+      "category": "Content Algorithm Design",
+      "question": "How to measure AI model and application performance?",
+      "background": "S11",
+      "options": [
+        {
+          "id": "P2-C4-Q2-O1",
+          "text": "Implement continuous safety monitoring and incident response systems",
+          "drivers": [
+            "Safety (+)"
+          ],
+          "paper_label": "Safety monitoring",
+          "background": "S11"
+        },
+        {
+          "id": "P2-C4-Q2-O2",
+          "text": "Provide comprehensive system documentation and user-facing explanations",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "System documentation",
+          "background": "S11"
+        },
+        {
+          "id": "P2-C4-Q2-O3",
+          "text": "Establish clear accountability frameworks and governance structures",
+          "drivers": [
+            "Accountability (++)"
+          ],
+          "paper_label": "Accountability framework",
+          "background": "S11"
+        }
+      ]
+    },
+    {
+      "id": "P2-C4-Q3",
+      "source": "Industry",
+      "category": "Content Algorithm Design",
+      "question": "How to assess AI system quality?",
+      "background": "S12, S13, S14, S15",
+      "options": []
+    },
+    {
+      "id": "P2-C5-Q1",
+      "source": "Industry",
+      "category": "User Privacy Controls",
+      "question": "How do we keep track of ethical design choices and considerations after the launch of the AI system?",
+      "background": "S09",
+      "options": [
+        {
+          "id": "P2-C5-Q1-O1",
+          "text": "Implement systematic documentation and record-keeping processes",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "paper_label": "Systematic documentation",
+          "background": "S09"
+        }
+      ]
+    },
+    {
+      "id": "P2-C5-Q2",
+      "source": "Industry",
+      "category": "User Privacy Controls",
+      "question": "How can organizations address mistrust in their ability to develop and use AI ethically?",
+      "background": "S03",
+      "options": [
+        {
+          "id": "P2-C5-Q2-O1",
+          "text": "assessment of emerging AI security",
+          "drivers": [
+            "Ethics (+)"
+          ],
+          "rationale": "security measurement",
+          "paper_label": "Security assessment",
+          "background": "S03"
+        }
+      ]
+    },
+    {
+      "id": "P2-C5-Q3",
+      "source": "Industry",
+      "category": "User Privacy Controls",
+      "question": "How can organizations embed trust within their GenAI applications?",
+      "background": "S03, S26",
+      "options": [
+        {
+          "id": "P2-C5-Q3-O1",
+          "text": "education and training would be most effective in ensuring everyone understand what GenAI can and cannot do",
+          "drivers": [
+            "Trust (+)",
+            "Privacy (+)"
+          ],
+          "rationale": "trainning",
+          "paper_label": "Education programs",
+          "background": "S03"
+        },
+        {
+          "id": "P2-C5-Q3-O2",
+          "text": "regular audits and monitoring",
+          "drivers": [
+            "Trust (+)",
+            "Fairness (++)"
+          ],
+          "rationale": "monitoring",
+          "paper_label": "Regular audits",
+          "background": "S03"
+        },
+        {
+          "id": "P2-C5-Q3-O3",
+          "text": "human oversight",
+          "drivers": [
+            "Trust (++)",
+            "Transparency (++)"
+          ],
+          "rationale": "business analysis",
+          "paper_label": "Human oversight",
+          "background": "S03"
+        }
+      ]
+    },
+    {
+      "id": "P2-C6-Q1",
+      "source": "Industry",
+      "category": "Fairness Infrastructure",
+      "question": "How to improve developer productivity?",
+      "background": "S02, S26",
+      "options": [
+        {
+          "id": "P2-C6-Q1-O1",
+          "text": "Developer-first mindset to improve productivity and satisfaction, leveraging open source AI tools for internal management",
+          "drivers": [
+            "Bias (N)"
+          ],
+          "rationale": "developer mindset",
+          "paper_label": "Developer-first mindset",
+          "background": "S02, S26"
+        }
+      ]
+    },
+    {
+      "id": "P2-C6-Q2",
+      "source": "Industry",
+      "category": "Fairness Infrastructure",
+      "question": "How to manage technical debt?",
+      "background": "S02",
+      "options": [
+        {
+          "id": "P2-C6-Q2-O1",
+          "text": "Preventative wellness assessments rooted in business impact",
+          "drivers": [
+            "Technical Debt (+)"
+          ],
+          "rationale": "business analysis",
+          "paper_label": "Preventative assessments",
+          "background": "S02"
+        }
+      ]
+    },
+    {
+      "id": "P2-C6-Q3",
+      "source": "Industry",
+      "category": "Fairness Infrastructure",
+      "question": "How can copilots support the banking workforce?",
+      "background": "S04",
+      "options": [
+        {
+          "id": "P2-C6-Q3-O1",
+          "text": "AI-powered tools that enhance productivity",
+          "drivers": [
+            "Trust (+)",
+            "Transparency (+)"
+          ],
+          "rationale": "enhananced productivity",
+          "paper_label": "AI productivity tools",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q3-O2",
+          "text": "Automated document analysis and processing",
+          "drivers": [
+            "Trust (+)"
+          ],
+          "rationale": "auto documentation",
+          "paper_label": "Document automation",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q3-O3",
+          "text": "AI-assisted customer service automation",
+          "drivers": [
+            "Trust (+)",
+            "Transparency (+)"
+          ],
+          "rationale": "auto customer services",
+          "paper_label": "Customer service AI",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q3-O4",
+          "text": "Implementation of AI safety and ethical guardrails, including responsible generative AI guidelines through model safety improvements, product and feature guardrails, and policy safeguards",
+          "drivers": [
+            "Ethics (++)",
+            "Bias (+)",
+            "Privacy (++)"
+          ],
+          "rationale": "implementation of AI safety and ethical guardrails",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q3-O5",
+          "text": "Comprehensive data infrastructure for ethical AI",
+          "drivers": [
+            "Ethics (++)",
+            "Privacy (++)"
+          ],
+          "rationale": "comprehensive data infrastructure",
+          "background": "S04"
+        }
+      ]
+    },
+    {
+      "id": "P2-C6-Q4",
+      "source": "Industry",
+      "category": "Fairness Infrastructure",
+      "question": "How will banks make ethical AI deployment happen?",
+      "background": "S04",
+      "options": [
+        {
+          "id": "P2-C6-Q4-O1",
+          "text": "Comprehensive data infrastructure for ethical AI",
+          "drivers": [
+            "Ethics (++)",
+            "Privacy (++)"
+          ],
+          "rationale": "comprehensive data infrastructure",
+          "paper_label": "Data infrastructure",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q4-O2",
+          "text": "Sophisticated data processing capabilities",
+          "drivers": [
+            "Ethics (++)",
+            "Bias (+)"
+          ],
+          "rationale": "sophisticate data processing capabilities",
+          "paper_label": "Data processing",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q4-O3",
+          "text": "Implementation of AI safety and ethical guardrails, including responsible generative AI guidelines through model safety improvements, product and feature guardrails, and policy safeguards",
+          "drivers": [
+            "Ethics (++)",
+            "Bias (+)",
+            "Privacy (++)"
+          ],
+          "rationale": "implementation of AI safety and ethical guardrails",
+          "paper_label": "Safety guardrails",
+          "background": "S04"
+        },
+        {
+          "id": "P2-C6-Q4-O4",
+          "text": "AI-assisted customer service automation",
+          "drivers": [
+            "Trust (+)",
+            "Transparency (+)"
+          ],
+          "rationale": "auto customer services",
+          "background": "S04"
+        }
+      ]
+    },
+    {
+      "id": "P2-C6-Q5",
+      "source": "Industry",
+      "category": "Fairness Infrastructure",
+      "question": "How can organizations address insufficient infrastructure and tooling to host and monitor AI use??",
+      "background": "S03",
+      "options": [
+        {
+          "id": "P2-C6-Q5-O1",
+          "text": "trustworthy and ethical AI",
+          "drivers": [
+            "Trust (++)"
+          ],
+          "rationale": "trustworthy and ethical AI",
+          "paper_label": "Trustworthy AI",
+          "background": "S03"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q1",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How can companies ensure sustained value from AI investments?",
+      "background": "S01",
+      "options": [
+        {
+          "id": "P2-C7-Q1-O1",
+          "text": "systematic, transparent approaches to confirming sustained value from their AI investments",
+          "drivers": [
+            "Trust (N)",
+            "Responsible (N)"
+          ],
+          "rationale": "ensures you can prove your AI is working as intended",
+          "paper_label": "Transparent approaches",
+          "background": "S01"
+        },
+        {
+          "id": "P2-C7-Q1-O2",
+          "text": "independent perspective on your AI governance and controls",
+          "drivers": [
+            "Privacy (N)",
+            "Security (N)",
+            "Data Protection Issue (N)"
+          ],
+          "rationale": "provides objective oversight to catch problems before they become costly failures",
+          "paper_label": "Independent oversight",
+          "background": "S01"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q2",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How to manage AI risks?",
+      "background": "S01, S10, S16, S21",
+      "options": [
+        {
+          "id": "P2-C7-Q2-O1",
+          "text": "Rigorous assessment and validation of AI risk management practices and controls",
+          "drivers": [
+            "Trust (N)",
+            "Responsible (N)"
+          ],
+          "rationale": "verifies your risk management actually works",
+          "paper_label": "Assessment validation",
+          "background": "S01"
+        },
+        {
+          "id": "P2-C7-Q2-O2",
+          "text": "AI risk assessment is the starting point for Responsible AI",
+          "drivers": [
+            "Trust (+)",
+            "Responsible (+)",
+            "Human Centric (+)",
+            "Governance (+)",
+            "Bias (+)",
+            "Safety (++)"
+          ],
+          "rationale": "you must understand your risks first",
+          "paper_label": "Risk protocols",
+          "background": "S01, S21"
+        },
+        {
+          "id": "P2-C7-Q2-O3",
+          "text": "standardized, AI-focused risk taxonomy",
+          "drivers": [
+            "Trust (N)",
+            "Responsible (N)"
+          ],
+          "rationale": "gives you consistent categories to organize and evaluate risks",
+          "paper_label": "Standardized taxonomy",
+          "background": "S01"
+        },
+        {
+          "id": "P2-C7-Q2-O4",
+          "text": "Proactive risk management approach",
+          "drivers": [
+            "Trust (N)",
+            "Responsible (N)"
+          ],
+          "background": "S01"
+        },
+        {
+          "id": "P2-C7-Q2-O5",
+          "text": "investing in AI research and development; fostering an inclusive AI-enabling ecosystem; shaping an enabling interoperable governance and policy environment for AI; building human capacity and preparing for labour market transformation; and international co-operation for trustworthy AI",
+          "drivers": [
+            "Human Centric (+)",
+            "Trust (+)",
+            "Governance (+)",
+            "Bias (+)"
+          ],
+          "paper_label": "AI research investment",
+          "background": "S21"
+        },
+        {
+          "id": "P2-C7-Q2-O6",
+          "text": "inclusive growth, sustainable development and well-being; respect for the rule of law, human rights and democratic values, including fairness and privacy; transparency and explainability; robustness, security and safety; and accountability",
+          "drivers": [
+            "Human Centric (+)",
+            "Trust (+)",
+            "Governance (+)",
+            "Bias (+)",
+            "Fairness (+)"
+          ],
+          "paper_label": "Inclusive growth",
+          "background": "S21"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q3",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How to prevent AI agents from harmful activity?",
+      "background": "S01",
+      "options": [
+        {
+          "id": "P2-C7-Q3-O1",
+          "text": "human-led management model",
+          "drivers": [
+            "Trust (N)",
+            "Responsible (N)"
+          ],
+          "rationale": "ensuring humans remain in control of day-to-day AI agent activities",
+          "paper_label": "Human-led management",
+          "background": "S01"
+        },
+        {
+          "id": "P2-C7-Q3-O2",
+          "text": "A holistic Responsible AI strategy can provide the framework for addressing this challenge",
+          "drivers": [
+            "Trust (+)",
+            "Responsible (+)"
+          ],
+          "rationale": "providing the organizational framework that enables effective human oversight",
+          "paper_label": "Responsible AI strategy",
+          "background": "S01"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q4",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How can organizations face the challenge of implementing AI responsibly?",
+      "background": "S05, S16, S17",
+      "options": [
+        {
+          "id": "P2-C7-Q4-O1",
+          "text": "The EY Responsible AI-framework offers a practical approach to address these challenges, complemented by Ethics by Design methodology for embedding ethical principles",
+          "drivers": [
+            "Ethics (++)",
+            "Trust (++)"
+          ],
+          "rationale": "Responsible AI-framework",
+          "paper_label": "EY Responsible AI framework",
+          "background": "S05, S16"
+        },
+        {
+          "id": "P2-C7-Q4-O2",
+          "text": "The seven guidelines that EY has established for responsible engagement with AI",
+          "drivers": [
+            "Ethics (+)"
+          ],
+          "rationale": "7 guidelines",
+          "paper_label": "Seven guidelines",
+          "background": "S05"
+        },
+        {
+          "id": "P2-C7-Q4-O3",
+          "text": "designate someone within the organization who is responsible for the development and implementation of AI-systems",
+          "drivers": [
+            "Ethics (+)"
+          ],
+          "rationale": "desinate skilled person",
+          "background": "S05",
+          "paper_label": "Skilled personnel"
+        },
+        {
+          "id": "P2-C7-Q4-O4",
+          "text": "Make information about the AI-system easily accessible to both end-users and system designers",
+          "drivers": [
+            "Transparency (+)"
+          ],
+          "rationale": "accessible info",
+          "background": "S05, S17"
+        },
+        {
+          "id": "P2-C7-Q4-O5",
+          "text": "Ensure a diverse and representative dataset that reflects the diversity of society to prevent bias",
+          "drivers": [
+            "Fairness (+)"
+          ],
+          "rationale": "ensure dataset",
+          "background": "S05"
+        },
+        {
+          "id": "P2-C7-Q4-O6",
+          "text": "Ensure that the design, implementation, and use of AI-systems comply with relevant laws and regulations",
+          "drivers": [
+            "Privacy (+)"
+          ],
+          "rationale": "ensure regulation",
+          "background": "S05"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q5",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How can organizations leverage the power of AI responsibly?",
+      "background": "S26",
+      "options": [
+        {
+          "id": "P2-C7-Q5-O1",
+          "text": "explore new avenues for targeting their audience with increased efficiency and precision",
+          "drivers": [
+            "Privacy (N)"
+          ],
+          "paper_label": "Efficient targeting",
+          "background": "S26"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q6",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "What are the best practices for deploying AI in my industry?",
+      "background": "S26",
+      "options": [
+        {
+          "id": "P2-C7-Q6-O1",
+          "text": "Utilize AI-driven product listings for improved searchability and shopping convenience",
+          "drivers": [
+            "Trust (+)"
+          ],
+          "paper_label": "AI-driven listings",
+          "background": "S26"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q7",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How can organizations address the lack of right people and skillsets for ethical GenAI deployment?",
+      "background": "S03",
+      "options": [
+        {
+          "id": "P2-C7-Q7-O1",
+          "text": "development and deployment of governance capabilities across the enterprise",
+          "drivers": [
+            "Ethics (++)",
+            "Explainability (++)"
+          ],
+          "rationale": "business analysis",
+          "background": "S03"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q8",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How to manage AI governance framework?",
+      "background": "S21",
+      "options": [
+        {
+          "id": "P2-C7-Q8-O1",
+          "text": "Develop comprehensive governance frameworks that address multiple dimensions of AI ethics and safety",
+          "drivers": [
+            "Trust (+)"
+          ],
+          "rationale": "business analysis",
+          "background": "S21"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q9",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How can organizations overcome inadequate governance models and policies for ethical GenAI?",
+      "background": "S03",
+      "options": [
+        {
+          "id": "P2-C7-Q9-O1",
+          "text": "assessment of emerging AI risks",
+          "drivers": [
+            "Ethics (++)",
+            "Accountability (++)"
+          ],
+          "rationale": "risk assessment",
+          "background": "S03"
+        }
+      ]
+    },
+    {
+      "id": "P2-C7-Q10",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "What approach to risk taking would you recommend in an AI-powered company?",
+      "background": "S12, S13, S14, S15",
+      "options": []
+    },
+    {
+      "id": "P2-C7-Q11",
+      "source": "Industry",
+      "category": "AI Challenges for Societies and Economies",
+      "question": "How to do AI Governance and Infrastructure",
+      "background": "S21",
+      "options": [
+        {
+          "id": "P2-C7-Q11-O1",
+          "text": "AI risk assessment is the starting point for Responsible AI",
+          "drivers": [
+            "Trust (+)",
+            "Responsible (+)",
+            "Human Centric (+)",
+            "Governance (+)",
+            "Bias (+)",
+            "Safety (++)"
+          ],
+          "background": "S01, S21"
+        },
+        {
+          "id": "P2-C7-Q11-O2",
+          "text": "investing in AI research and development; fostering an inclusive AI-enabling ecosystem; shaping an enabling interoperable governance and policy environment for AI; building human capacity and preparing for labour market transformation; and international co-operation for trustworthy AI",
+          "drivers": [
+            "Human Centric (+)",
+            "Trust (+)",
+            "Governance (+)",
+            "Bias (+)"
+          ],
+          "background": "S21"
+        },
+        {
+          "id": "P2-C7-Q11-O3",
+          "text": "inclusive growth, sustainable development and well-being; respect for the rule of law, human rights and democratic values, including fairness and privacy; transparency and explainability; robustness, security and safety; and accountability",
+          "drivers": [
+            "Human Centric (+)",
+            "Trust (+)",
+            "Governance (+)",
+            "Bias (+)",
+            "Fairness (+)"
+          ],
+          "background": "S21"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+name: Tests
+
+# Vercel deploys the site from this repository (its Git integration builds every push).
+# This workflow only runs the tests, so a failing commit shows a red check on GitHub.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test

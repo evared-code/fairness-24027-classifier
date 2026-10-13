@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+__pycache__/
+*.pyc
+# results may contain unpublished research data
+tr24027-results-*.json
+tr24027-results-*.csv
+tr24027-results-*.html
+
+# proxy secret key: never commit
+proxy/private-key.json
+.wrangler/

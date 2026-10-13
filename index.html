@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Address of the GitHub repository, shown as the "Source code" link at the bottom of the page. -->
+  <meta name="repository" content="https://github.com/OWNER/REPOSITORY">
+  <title>TR 24027 Fairness Classifier</title>
+  <meta name="description" content="Classify design decision options by primary source of potential bias (ISO/IEC TR 24027) with LLM self-consistency and cross-model agreement. Runs in the browser.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f4e8c'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-style='italic' fill='white' text-anchor='middle'%3E%CE%BA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<main class="wrap">
+  <header class="masthead">
+    <div class="masthead-text">
+      <h1>TR 24027 Fairness Classifier</h1>
+      <p class="lede">Classifies design decision options by their primary source of potential bias and the specific bias type, following ISO/IEC TR 24027:2021: <span class="nowrap"><i class="sw lab-data"></i> data,</span> <span class="nowrap"><i class="sw lab-cognitive"></i> human cognitive,</span> <span class="nowrap"><i class="sw lab-engineering"></i> engineering,</span> or none. Each option is asked several times per model, and up to three models answer independently, so you get a confidence for every label and a measure of how far the models agree.</p>
+    </div>
+    <aside class="privacy">
+      <h2>Your keys stay with you</h2>
+      <p>The tool runs in your browser. API keys and data go straight to the model providers you choose, or through this site's API proxy only if you choose it.</p>
+    </aside>
+  </header>
+
+  <details class="keyflow" id="keyflow">
+    <summary>How API keys travel when other people use this tool</summary>
+    <figure class="keyflow-fig">
+      <svg class="keyflow-svg" viewBox="0 0 1000 460" role="img" aria-label="Diagram: Vercel's static hosting only sends the tool's files to the visitor's browser. Route A: the browser sends the visitor's own key directly to the model provider. Route B: the browser sends the request, encoded or not, to the API proxy function at /api/proxy in the same Vercel project, which decodes it in memory and forwards it to the provider. The key is readable by the browser and provider, and on route B also by the proxy function; never by the static file hosting." xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="kf-head-kf-files" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-files" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-req" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-res" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-res" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<g>
+  <rect class="kf-box" x="20" y="30" width="230" height="150" rx="10"/>
+  <text class="kf-title" x="38" y="64">Vercel: static files</text>
+  <text class="kf-sub" x="38" y="86">sends the tool's files</text>
+  <text class="kf-sub" x="38" y="104">(HTML, CSS, JavaScript)</text>
+  <text class="kf-sub kf-strong" x="38" y="140">never receives keys or data</text>
+</g>
+<g>
+  <rect class="kf-box kf-browser" x="340" y="30" width="270" height="180" rx="10"/>
+  <circle class="kf-dot" cx="356" cy="46" r="3.5"/><circle class="kf-dot" cx="368" cy="46" r="3.5"/><circle class="kf-dot" cx="380" cy="46" r="3.5"/>
+  <text class="kf-title" x="358" y="80">Visitor's browser</text>
+  <text class="kf-sub" x="358" y="100">runs the tool; nothing is installed</text>
+  <rect class="kf-key" x="358" y="112" width="228" height="28" rx="14"/>
+  <circle class="kf-keyring" cx="376" cy="126" r="6"/><line class="kf-keystem" x1="382" y1="126" x2="396" y2="126"/><line class="kf-keystem" x1="392" y1="126" x2="392" y2="131"/>
+  <text class="kf-keytext" x="404" y="131">visitor's own key typed here</text>
+  <text class="kf-sub" x="358" y="162">key held in memory; stored only</text>
+  <text class="kf-sub" x="358" y="178">if "Remember keys" is ticked</text>
+  <text class="kf-sub" x="358" y="198">saves report, CSV, JSON (no keys)</text>
+</g>
+<g>
+  <rect class="kf-box kf-owner" x="340" y="290" width="270" height="150" rx="10"/>
+  <text class="kf-title" x="358" y="322">Vercel: API proxy function</text>
+  <text class="kf-sub" x="358" y="344">/api/proxy, same project; route B only</text>
+  <text class="kf-sub" x="358" y="366">decodes encoded requests in memory</text>
+  <text class="kf-sub" x="358" y="386">forwards only to listed providers</text>
+  <text class="kf-sub kf-strong" x="358" y="418">writes no logs, stores no keys</text>
+</g>
+<g>
+  <rect class="kf-box" x="760" y="30" width="220" height="410" rx="10"/>
+  <text class="kf-title" x="778" y="64">Model providers</text>
+  <text class="kf-prov" x="778" y="96">Anthropic (Claude)</text><text class="kf-dom" x="778" y="113">api.anthropic.com</text>
+  <text class="kf-prov" x="778" y="143">OpenAI (GPT)</text><text class="kf-dom" x="778" y="160">api.openai.com</text>
+  <text class="kf-prov" x="778" y="190">Google (Gemini)</text><text class="kf-dom" x="778" y="207">generativelanguage.googleapis.com</text>
+  <text class="kf-prov" x="778" y="237">OpenAI-compatible service</text><text class="kf-dom" x="778" y="254">the base URL you enter</text>
+  <line class="kf-rule" x1="778" y1="280" x2="962" y2="280"/>
+  <text class="kf-sub kf-strong" x="778" y="304">First three accept browser</text>
+  <text class="kf-sub kf-strong" x="778" y="320">calls (CORS)</text>
+  <text class="kf-sub" x="778" y="338">tested 13 October 2026</text>
+  <text class="kf-sub" x="778" y="356">Others: try Check key,</text>
+  <text class="kf-sub" x="778" y="372">else use route B</text>
+  <text class="kf-sub kf-strong" x="778" y="406">Usage is billed to the</text>
+  <text class="kf-sub kf-strong" x="778" y="424">visitor's own key</text>
+</g>
+<g>
+  <rect class="kf-box" x="20" y="260" width="230" height="180" rx="10"/>
+  <text class="kf-title" x="38" y="292">Who can read the key</text>
+  <text class="kf-sub kf-strong" x="38" y="318"><tspan class="kf-num">A</tspan> Direct</text>
+  <text class="kf-sub" x="38" y="336">browser and provider</text>
+  <text class="kf-sub kf-strong" x="38" y="362"><tspan class="kf-num">B</tspan> Via API proxy</text>
+  <text class="kf-sub" x="38" y="380">browser, proxy function</text>
+  <text class="kf-sub" x="38" y="398">(in memory), provider</text>
+  <text class="kf-sub kf-strong" x="38" y="424">Never: the static files</text>
+</g>
+<line class="kf-files" x1="250" y1="100" x2="336" y2="100" marker-end="url(#kf-head-kf-files)"/><text class="kf-label" x="293" y="92" text-anchor="middle">tool files</text>
+<line class="kf-req" x1="610" y1="86" x2="756" y2="86" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="78" text-anchor="middle"><tspan class="kf-num">A</tspan> request + key</text>
+<line class="kf-res" x1="756" y1="130" x2="614" y2="130" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="150" text-anchor="middle">answer</text>
+<line class="kf-req" x1="450" y1="210" x2="450" y2="286" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="440" y="244" text-anchor="end"><tspan class="kf-num">B</tspan> request + key,</text>
+<text class="kf-label" x="440" y="260" text-anchor="end">encoded or not</text>
+<line class="kf-res" x1="520" y1="290" x2="520" y2="214" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="530" y="256" text-anchor="start">answer</text>
+<line class="kf-req" x1="610" y1="334" x2="756" y2="334" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="326" text-anchor="middle">forwarded + key</text>
+<line class="kf-res" x1="756" y1="378" x2="614" y2="378" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="398" text-anchor="middle">answer</text>
+</svg>
+      <figcaption>Each visitor uses and pays for their own key; the site's static hosting on Vercel only sends the tool's files. <b>Route A (direct, the default)</b>: the browser sends the key straight to the provider over HTTPS. <b>Route B (via API proxy, optional)</b>: the request goes to the proxy function of this site (<code>/api/proxy</code>, a Vercel Function), encoded or not; it decodes the request in memory, forwards it only to listed providers and writes no logs, but it does handle the key while forwarding. Keys always travel in request headers or bodies, never in URLs, so they do not appear in hosting access logs. Its code is published as <a href="proxy/handler.js">proxy/handler.js</a>. The request inspector in step 4 shows every request, decoded or as sent. Browser access (CORS) of the three providers was checked on 13 October 2026.</figcaption>
+    </figure>
+  </details>
+
+  <div id="resume-banner" class="banner banner-info" hidden>
+    <span>This browser has an unfinished run.</span>
+    <button type="button" class="btn btn-small" id="resume-open">Open the unfinished run</button>
+    <button type="button" class="btn btn-small btn-ghost" id="resume-discard">Discard it</button>
+  </div>
+
+  <section class="protocol" aria-labelledby="h-protocol">
+    <h2 id="h-protocol" class="section-title">Protocol</h2>
+    <ol class="steps">
+
+      <li class="step" aria-labelledby="h-data">
+        <h3 id="h-data">Load decisions and options</h3>
+        <p class="hint">Upload one or more JSON files. Each option is classified separately; a decision without options is classified as a whole.</p>
+        <div class="row">
+          <label class="btn btn-primary btn-file">Upload JSON files<input type="file" id="file-input" accept=".json,application/json" multiple></label>
+          <span class="or">or use an example:</span>
+          <button type="button" class="btn btn-ghost" data-example="data/ethical-ai-metaverse.json">Ethical AI-metaverse decisions (industry voice), 32 decisions</button>
+          <button type="button" class="btn btn-ghost" data-example="data/sample-small.json">Small sample, 4 options</button>
+        </div>
+        <div id="data-errors" class="errors" role="alert" hidden></div>
+        <div id="data-summary" class="summary" hidden></div>
+        <details class="format">
+          <summary>Input file format</summary>
+<pre>{
+  "title": "My study",                       // optional
+  "context": "Describe the system ...",      // optional, sent with every question
+  "decisions": [
+    {
+      "id": "D1",                              // required, unique
+      "question": "How to ...?",               // required
+      "source": "Practitioner",                // optional, groups results (e.g. voice)
+      "category": "Trust and safety",          // optional
+      "drivers": ["Trust (+)"],                // optional, applies to all options
+      "options": [                             // optional
+        { "id": "D1-O1", "text": "Option A",
+          "drivers": ["Transparency (++)", { "name": "Bias", "effect": "N" }] },
+        "Option B"                             // or just text
+      ]
+    }
+  ]
+}</pre>
+          <p><b>Decision drivers</b> are optional: the quality attributes (forces) a decision or option affects, with an optional effect: ++ strongly supports, + supports, N neutral, - hurts, -- strongly hurts. Drivers on a decision apply to all its options.</p>
+          <p><a href="data/ethical-ai-metaverse.json" download id="example-download">Download the example file</a> to use as a template.</p>
+        </details>
+        <label class="field">System context <span class="field-hint">Sent with every question so models know what the options are for.</span>
+          <textarea id="context" rows="3"></textarea>
+        </label>
+      </li>
+
+      <li class="step" aria-labelledby="h-models">
+        <h3 id="h-models">Choose models and enter API keys</h3>
+        <p class="hint">Pick any provider and model for each row and give it the name you want to see in the report. Use at least three models, ideally from different providers, for the agreement statistics. <em>Check key</em> confirms the key works and lists the models it can use. <em>OpenAI-compatible</em> covers services such as OpenRouter, DeepSeek, Groq, Mistral or a local server; enter its base URL.</p>
+        <div id="model-rows" class="models"></div>
+        <div class="row">
+          <button type="button" class="btn btn-small" id="add-model">Add another model</button>
+          <button type="button" class="btn btn-small btn-ghost" id="reset-models">Restore Claude, GPT and Gemini</button>
+        </div>
+        <fieldset class="route">
+          <legend>Route to the providers</legend>
+          <label class="check"><input type="radio" name="route" value="direct" checked> <span><b>Direct</b> <span class="field-hint">Your browser talks to each provider. Most private: no server is involved.</span></span></label>
+          <label class="check"><input type="radio" name="route" value="proxy"> <span><b>Via API proxy</b> <span class="field-hint">Requests pass through the API proxy of this site (<code>/api/proxy</code>). The proxy handles your key in memory while forwarding it.</span></span></label>
+          <div id="proxy-settings" class="proxy-settings" hidden>
+            <label class="field"><span>API proxy address <span class="field-hint">A full https address, or <code>/api/proxy</code> when this page and the proxy run on the same Vercel project.</span></span><input type="text" id="proxy-url" placeholder="https://your-project.vercel.app/api/proxy" spellcheck="false" autocomplete="off" inputmode="url"></label>
+            <label class="check"><input type="checkbox" id="encode" checked> <span>Encode requests <span class="field-hint">Your key and request are encrypted for the proxy on top of HTTPS, so they cannot be read in logs on the way. The proxy decodes them in memory to call the provider.</span></span></label>
+            <div class="row"><button type="button" class="btn btn-small btn-ghost" id="check-proxy">Check proxy</button><button type="button" class="btn btn-small btn-ghost" id="same-site-proxy" hidden>Use this website's proxy</button><span id="proxy-msg" class="small muted" aria-live="polite"></span></div>
+          </div>
+        </fieldset>
+        <label class="check"><input type="checkbox" id="remember-keys"> <span>Remember keys in this browser <span class="field-hint">Stored unencrypted. Leave off on shared computers.</span></span></label>
+        <label class="check"><input type="checkbox" id="demo-mode"> <span>Use simulated models instead <span class="field-hint">No keys needed. For trying the tool only; the answers are not research data.</span></span></label>
+      </li>
+
+      <li class="step" aria-labelledby="h-settings">
+        <h3 id="h-settings">Set the sampling</h3>
+        <div class="settings">
+          <label class="field"><span>Runs per item, <i>N</i></span><input type="number" id="runs" min="1" max="50" value="10"></label>
+          <label class="field"><span>Temperature</span><input type="number" id="temperature" min="0" max="2" step="0.1" value="0.7"></label>
+          <label class="field"><span>Acceptance threshold</span><input type="number" id="threshold" min="0.25" max="1" step="0.05" value="0.8"></label>
+          <label class="field"><span>Parallel requests per model</span><input type="number" id="concurrency" min="1" max="20" value="4"></label>
+          <label class="field"><span>Requests per minute, 0 = no limit</span><input type="number" id="rpm" min="0" max="10000" value="0"></label>
+          <label class="field"><span>Retries after an error</span><input type="number" id="retries" min="0" max="10" value="5"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="include-drivers" checked> <span>Include decision drivers in the prompt <span class="field-hint">When the input has drivers. Turn off to classify without them and compare.</span></span></label>
+        <label class="check"><input type="checkbox" id="shuffle" checked> <span>Shuffle the order of labels on every run <span class="field-hint">Checks that answers do not depend on the order labels are listed in.</span></span></label>
+        <details class="advanced">
+          <summary>Prompt and label definitions</summary>
+          <p class="hint">The default definitions paraphrase the bias sources in ISO/IEC TR 24027:2021. Check the wording against the standard before you publish; the report records exactly what was used.</p>
+          <label class="field">System prompt<textarea id="system-prompt" rows="3"></textarea></label>
+          <div id="defs"></div>
+          <label class="field"><span>Bias types per source, following ISO/IEC TR 24027:2021 clause 6 <span class="field-hint">JSON. Models choose one bias type with each label; the report's checklist lists every type. The default clause numbers are the tool author's reading of the standard: verify them.</span></span><textarea id="taxonomy" rows="12" spellcheck="false" class="mono-area"></textarea></label>
+          <p id="taxonomy-error" class="errors" role="alert" hidden></p>
+          <button type="button" class="btn btn-small btn-ghost" id="reset-prompt">Restore default prompt, definitions and bias types</button>
+          <details><summary>Preview the prompt for the first item</summary><pre id="prompt-preview"></pre></details>
+        </details>
+      </li>
+
+      <li class="step" aria-labelledby="h-run">
+        <h3 id="h-run">Run the classification</h3>
+        <p id="estimate" class="estimate"></p>
+        <div class="row">
+          <button type="button" class="btn btn-primary" id="start">Start classification</button>
+          <button type="button" class="btn" id="cancel" hidden>Cancel</button>
+          <button type="button" class="btn" id="resume" hidden>Resume the run</button>
+        </div>
+        <div id="progress" class="progress" hidden></div>
+        <div id="run-log" class="log" hidden aria-live="polite"></div>
+        <details class="inspector" id="inspector">
+          <summary>Request inspector <span id="insp-count" class="muted small"></span></summary>
+          <p class="hint">Every request this page sends, shown decoded or exactly as it left the browser. API keys are always shortened. The records stay in this page only and are never saved.</p>
+          <div class="row insp-bar" role="group" aria-label="Inspector view">
+            <label class="check"><input type="radio" name="insp-view" value="decoded" checked> <span>Decoded</span></label>
+            <label class="check"><input type="radio" name="insp-view" value="sent"> <span>As sent</span></label>
+            <button type="button" class="btn btn-small btn-ghost" id="insp-clear">Clear</button>
+          </div>
+          <div id="insp-list" class="insp-list"><p class="muted small">No requests yet. Run a classification or check a key.</p></div>
+        </details>
+      </li>
+    </ol>
+  </section>
+
+  <section id="results-section" class="results" aria-labelledby="h-results">
+    <div class="results-bar">
+      <h2 id="h-results" class="section-title">Results</h2>
+      <div class="row">
+        <label class="btn btn-ghost btn-file">Open saved results<input type="file" id="load-results" accept=".json,.html,application/json,text/html"></label>
+        <button type="button" class="btn" id="dl-html" disabled>Download report</button>
+        <button type="button" class="btn" id="dl-csv" disabled>Download CSV</button>
+        <button type="button" class="btn" id="dl-json" disabled>Download full data</button>
+      </div>
+    </div>
+    <div id="dashboard"><p class="empty">Results appear here as soon as a run starts. You can also open a results file (JSON) or a report (HTML) saved earlier.</p></div>
+  </section>
+
+  <footer class="foot">
+    <p>Open source, MIT licence. <a href="https://github.com/" id="repo-link">Source code</a></p>
+  </footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

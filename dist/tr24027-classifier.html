@@ -1,0 +1,3049 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Address of the GitHub repository, shown as the "Source code" link at the bottom of the page. -->
+  <meta name="repository" content="https://github.com/OWNER/REPOSITORY">
+  <title>TR 24027 Fairness Classifier</title>
+  <meta name="description" content="Classify design decision options by primary source of potential bias (ISO/IEC TR 24027) with LLM self-consistency and cross-model agreement. Runs in the browser.">
+  <style id="app-css">
+/* TR 24027 Fairness Classifier — shared by the app and the downloadable report.
+   Concept: the tool reads like a methods protocol; the results read like a typeset results page. */
+
+:root {
+  color-scheme: light;
+  --page: #edf0f4;
+  --sheet: #ffffff;
+  --field: #ffffff;
+  --ink: #18202c;
+  --ink-2: #465061;
+  --muted: #6a7383;
+  --rule: #18202c;
+  --hair: #d5dae2;
+  --hair-2: #e9ecf1;
+  --accent: #1f4e8c;
+  --accent-ink: #1f4e8c;
+  --accent-tint: #e7eef8;
+  --on-accent: #ffffff;
+  --shadow: 0 1px 2px rgba(24, 32, 44, 0.06), 0 8px 28px rgba(24, 32, 44, 0.07);
+  /* data colours: validated categorical slots 1-3, neutral for None */
+  --lab-data: #2a78d6;
+  --lab-cognitive: #eb6834;
+  --lab-engineering: #1baf7a;
+  --lab-none: #b9bec7;
+  --hist-on: #2a78d6;
+  --hist-off: #b7d3f6;
+  /* status: always paired with an icon and a word */
+  --good: #0ca30c;
+  --good-ink: #0b6b0b;
+  --warning: #fab219;
+  --warning-ink: #855c00;
+  --critical: #d03b3b;
+  --critical-ink: #a82727;
+
+  --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0e1217; --sheet: #161b22; --field: #0e1217; --ink: #e4e8ee; --ink-2: #aeb6c2; --muted: #8790a0;
+    --rule: #e4e8ee; --hair: #2e3540; --hair-2: #222831; --accent: #8db3e8; --accent-ink: #8db3e8; --accent-tint: #1c2633;
+    --on-accent: #0e1217; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+    --lab-data: #3987e5; --lab-cognitive: #d95926; --lab-engineering: #199e70; --lab-none: #5b6370;
+    --hist-on: #3987e5; --hist-off: #1c5cab; --good-ink: #2fbf2f; --warning-ink: #fab219; --critical-ink: #ef7a7a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0e1217; --sheet: #161b22; --field: #0e1217; --ink: #e4e8ee; --ink-2: #aeb6c2; --muted: #8790a0;
+  --rule: #e4e8ee; --hair: #2e3540; --hair-2: #222831; --accent: #8db3e8; --accent-ink: #8db3e8; --accent-tint: #1c2633;
+  --on-accent: #0e1217; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+  --lab-data: #3987e5; --lab-cognitive: #d95926; --lab-engineering: #199e70; --lab-none: #5b6370;
+  --hist-on: #3987e5; --hist-off: #1c5cab; --good-ink: #2fbf2f; --warning-ink: #fab219; --critical-ink: #ef7a7a;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 var(--sans); }
+a { color: var(--accent-ink); text-underline-offset: 2px; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.2; margin: 0; }
+p { margin: 0 0 0.75em; }
+pre { background: var(--hair-2); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font: 12.5px/1.55 var(--mono); white-space: pre-wrap; margin: 8px 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.nowrap { white-space: nowrap; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 40px 20px 56px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- masthead ---------- */
+.masthead { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 40px; align-items: end; padding-bottom: 28px; }
+.masthead h1 { font-size: clamp(2rem, 4.2vw, 2.85rem); font-weight: 500; letter-spacing: -0.015em; }
+.lede { font-family: var(--serif); font-size: 1.13rem; line-height: 1.6; color: var(--ink-2); max-width: 64ch; margin: 14px 0 0; }
+.lede .sw { margin: 0 2px 0 4px; vertical-align: 0.05em; }
+.privacy { border-left: 2px solid var(--accent); padding: 2px 0 2px 16px; color: var(--ink-2); font-size: 0.9rem; }
+.privacy h2 { font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+.privacy p { margin: 0; }
+
+/* ---------- section titles: one strong rule, like a journal section break ---------- */
+.section-title { font-size: 1.75rem; font-weight: 500; border-top: 2px solid var(--rule); padding-top: 12px; margin-bottom: 8px; }
+
+/* ---------- protocol (true sequence: numbered) ---------- */
+.protocol { margin-top: 12px; }
+.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+.step { counter-increment: step; position: relative; padding: 26px 0 26px 72px; border-bottom: 1px solid var(--hair); }
+.step:last-child { border-bottom: 0; }
+.step::before {
+  content: counter(step); position: absolute; left: 0; top: 18px; width: 52px; text-align: right;
+  font: italic 400 2.6rem/1 var(--serif); color: var(--accent);
+}
+.step h3 { font-size: 1.28rem; margin-bottom: 6px; }
+.hint { color: var(--ink-2); max-width: 72ch; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.or { color: var(--muted); font-size: 0.9rem; margin: 0 4px; }
+
+.btn {
+  appearance: none; font: inherit; font-size: 0.92rem; font-weight: 600; line-height: 1.2;
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--hair); background: var(--sheet); color: var(--ink);
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-ghost { background: transparent; }
+.btn-small { padding: 5px 10px; font-size: 0.84rem; }
+.btn-file { position: relative; }
+.btn-file input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.btn-file:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; font-size: 0.9rem; font-weight: 600; color: var(--ink); margin: 14px 0 6px; max-width: 900px; }
+.field-hint { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+input[type="text"], input[type="password"], input[type="number"], input[type="search"], input[type="url"], textarea, select {
+  font: 400 0.95rem/1.4 var(--sans); color: var(--ink); background: var(--field); border: 1px solid var(--hair);
+  border-radius: 6px; padding: 8px 10px; min-width: 0; width: 100%;
+}
+input[type="number"] { font-variant-numeric: tabular-nums; }
+textarea { resize: vertical; }
+input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-tint); }
+.check { display: flex; gap: 10px; align-items: baseline; margin: 12px 0; font-size: 0.93rem; max-width: 80ch; }
+.check input { flex: none; accent-color: var(--accent); }
+.errors { border-left: 3px solid var(--critical); background: var(--sheet); color: var(--critical-ink); padding: 10px 14px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+.errors ul { margin: 4px 0 0; padding-left: 20px; }
+.summary { border-left: 3px solid var(--good); background: var(--sheet); padding: 10px 14px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+details > summary { cursor: pointer; font-weight: 600; color: var(--ink-2); margin: 8px 0; }
+details > summary:hover { color: var(--ink); }
+
+.models { display: grid; gap: 0; margin: 12px 0; border-top: 1px solid var(--hair); }
+.model-msg:empty { display: none; }
+.model-msg.ok { color: var(--good-ink); }
+.model-msg.err { color: var(--critical-ink); }
+.settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 18px; max-width: 900px; align-items: end; }
+.settings .field { margin: 10px 0 0; justify-content: space-between; }
+.estimate { font-family: var(--serif); font-size: 1.05rem; color: var(--ink); }
+.progress { display: grid; gap: 8px; margin: 16px 0; max-width: 900px; }
+.prog-row { display: grid; grid-template-columns: minmax(130px, 260px) 1fr auto; gap: 12px; align-items: center; font-size: 0.9rem; }
+.prog-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-bar { height: 6px; background: var(--hair); border-radius: 3px; overflow: hidden; }
+.prog-bar > div { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.2s; }
+.prog-bar > div.prog-err { background: var(--critical); }
+.prog-n { font-variant-numeric: tabular-nums; color: var(--muted); }
+.log { max-height: 170px; overflow-y: auto; font: 12px/1.55 var(--mono); background: var(--sheet); border: 1px solid var(--hair); border-radius: 6px; padding: 8px 12px; max-width: 900px; }
+.log .warn { color: var(--warning-ink); }
+.log .err { color: var(--critical-ink); }
+.log .ok { color: var(--good-ink); }
+.banner { border-radius: 6px; padding: 12px 16px; margin: 0 0 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--sheet); }
+.banner-info { border-left: 3px solid var(--accent); }
+.banner-warn { display: block; border-left: 3px solid var(--warning); }
+
+.results { margin-top: 40px; }
+.results-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 20px; border-top: 2px solid var(--rule); padding-top: 12px; margin-bottom: 18px; }
+.results-bar .section-title { border: 0; padding: 0; margin: 0; }
+.results-bar .row { margin: 0; }
+.empty { font-family: var(--serif); font-size: 1.05rem; color: var(--ink-2); background: var(--sheet); border-radius: 8px; padding: 36px 28px; text-align: center; box-shadow: var(--shadow); }
+.foot { margin-top: 48px; font-size: 0.85rem; color: var(--muted); text-align: center; }
+
+/* ---------- the results page: a typeset sheet ---------- */
+.paper { background: var(--sheet); border-radius: 8px; box-shadow: var(--shadow); padding: 48px clamp(18px, 5vw, 64px) 56px; }
+.paper-head { margin-bottom: 26px; }
+.paper-head h2 { font-size: clamp(1.45rem, 2.8vw, 1.95rem); font-weight: 500; letter-spacing: -0.01em; max-width: 30em; }
+.paper-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.abstract { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 18px 0 8px; margin: 0 0 36px; }
+.abstract-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.abstract h3 { font-size: 1rem; font-style: italic; font-weight: 600; }
+#results-text { font-family: var(--serif); font-size: 1.12rem; line-height: 1.72; max-width: 72ch; hyphens: auto; }
+.abstract .small { margin-top: -4px; }
+
+.fig, .tab { margin: 0 0 36px; min-width: 0; }
+.fig figcaption, .tab-cap { font-family: var(--serif); font-size: 0.95rem; line-height: 1.5; color: var(--ink-2); max-width: 75ch; }
+.fig figcaption { margin-top: 12px; }
+.tab-cap { margin-bottom: 10px; }
+.fig figcaption b, .tab-cap b { color: var(--ink); }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; }
+.table-note { font-size: 0.85rem; color: var(--muted); margin: -28px 0 36px; }
+
+/* bars */
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.86rem; color: var(--ink-2); margin: 0 0 12px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.lab-data { --c: var(--lab-data); }
+.lab-cognitive { --c: var(--lab-cognitive); }
+.lab-engineering { --c: var(--lab-engineering); }
+.lab-none { --c: var(--lab-none); }
+.sw, .seg, .dot { background: var(--c, var(--lab-none)); }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 170px) 1fr 44px; gap: 12px; align-items: center; font-size: 0.9rem; }
+.bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar { display: flex; gap: 2px; height: 28px; }
+.seg { min-width: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: #fff; }
+.seg:first-child { border-radius: 4px 0 0 4px; }
+.seg:last-child { border-radius: 0 4px 4px 0; }
+.seg:only-child { border-radius: 4px; }
+.seg span { text-shadow: 0 0 2px rgba(0, 0, 0, 0.45); font-variant-numeric: tabular-nums; }
+.seg.lab-none span { color: #18202c; text-shadow: none; }
+.seg.seg-empty { background: repeating-linear-gradient(45deg, transparent 0 4px, var(--hair) 4px 6px); box-shadow: inset 0 0 0 1px var(--hair); }
+.bar-n { font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+
+/* histograms */
+.hists { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 28px; }
+.hist-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hplot { display: flex; align-items: flex-end; gap: 4px; height: 130px; border-bottom: 1px solid var(--rule); padding-top: 18px; margin-bottom: 22px; }
+.hcol { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
+.hbar { border-radius: 3px 3px 0 0; }
+.hbar-on { background: var(--hist-on); }
+.hbar-off { background: var(--hist-off); }
+.hval { font-size: 0.74rem; text-align: center; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hlab { position: absolute; bottom: -20px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* booktabs tables */
+.table-wrap { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule); }
+.t th, .t td { text-align: left; padding: 7px 10px; vertical-align: top; }
+.t thead th { border-bottom: 1px solid var(--rule); font-weight: 600; white-space: nowrap; }
+.t tbody td { border-bottom: 1px solid var(--hair-2); }
+.t tbody tr:last-child td { border-bottom: 0; }
+.t td.num, .t th.num { text-align: right; }
+.t tr.group th { font-family: var(--serif); font-style: italic; font-weight: 600; padding-top: 14px; border-bottom: 1px solid var(--hair); }
+.t tbody tr:not(.group):hover td { background: var(--accent-tint); }
+.t .id { font-family: var(--mono); font-size: 0.8rem; white-space: nowrap; color: var(--ink-2); }
+.t .wide { min-width: 240px; }
+.t details summary { font-weight: 500; color: var(--ink); margin: 0; }
+.t .q { font-family: var(--serif); color: var(--ink-2); margin: 6px 0 4px; }
+.t .votes { font-size: 0.82rem; color: var(--ink-2); display: grid; gap: 2px; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 0.08em; }
+.chip { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.chip-c { color: var(--muted); }
+.chip-muted { color: var(--muted); }
+.status { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; white-space: nowrap; }
+.status-good { color: var(--good-ink); }
+.status-warning { color: var(--warning-ink); }
+.status-critical { color: var(--critical-ink); }
+.status-muted { color: var(--muted); }
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 0 0 12px; font-size: 0.84rem; font-weight: 600; }
+.filters label { display: flex; flex-direction: column; gap: 4px; }
+.filters select { width: auto; }
+.filters .grow { flex: 1; min-width: 200px; }
+.filter-count { padding-bottom: 9px; font-weight: 400; }
+
+/* methods */
+.methods { border-top: 2px solid var(--rule); padding-top: 14px; margin-top: 12px; }
+.methods h2 { font-size: 1.45rem; font-weight: 500; margin-bottom: 4px; }
+.methods h3 { font-size: 1.05rem; font-style: italic; margin: 24px 0 10px; }
+.defs { margin: 0; max-width: 78ch; }
+.defs dt { font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.defs dd { margin: 2px 0 12px 17px; font-family: var(--serif); color: var(--ink-2); line-height: 1.6; }
+.eqs { max-width: 78ch; }
+.eq { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; margin: 14px 0 2px; }
+.eq-l { color: var(--ink-2); }
+.eq-r { font-family: var(--serif); font-size: 1.12rem; }
+.eq-note { font-family: var(--serif); font-size: 0.93rem; color: var(--ink-2); margin: 0 0 8px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 22px; font-size: 0.92rem; max-width: 900px; }
+.kv dt { color: var(--ink-2); }
+.kv dd { margin: 0; }
+.notes { font-family: var(--serif); color: var(--ink-2); padding-left: 20px; max-width: 78ch; line-height: 1.6; }
+
+.report-note { font-size: 0.85rem; color: var(--muted); max-width: 90ch; }
+.tip { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.1s; max-width: 320px;
+  background: var(--ink); color: var(--sheet); font-size: 0.8rem; padding: 6px 9px; border-radius: 5px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .masthead { grid-template-columns: 1fr; gap: 20px; }
+  .pair { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 28px 16px 40px; }
+  .step { padding-left: 0; padding-top: 58px; }
+  .step::before { top: 22px; text-align: left; width: auto; font-size: 2rem; }
+  .bar-row { grid-template-columns: 76px 1fr 34px; gap: 8px; }
+  .prog-row { grid-template-columns: 1fr; gap: 2px; }
+  .kv { grid-template-columns: 1fr; gap: 0; }
+  .kv dd { margin-bottom: 8px; }
+  .paper { border-radius: 0; margin: 0 -16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- print: save the report as PDF from the browser ---------- */
+@media print {
+  :root { --page: #fff; --sheet: #fff; }
+  body { font-size: 10.5pt; }
+  .paper { box-shadow: none; padding: 0; }
+  .fig, .tab, .abstract { break-inside: avoid; }
+  .filters, .tip, [data-copy], .results-bar .row { display: none !important; }
+  .t tbody tr[hidden] { display: table-row !important; }
+}
+
+/* ---------- bias types and the TR 24027 checklist ---------- */
+.chip-cl { font-family: var(--mono); font-size: 0.76rem; color: var(--ink-2); background: var(--hair-2); border-radius: 4px; padding: 0 4px; }
+.checklist { border-top: 2px solid var(--rule); padding-top: 14px; margin-top: 40px; }
+.checklist h2 { font-size: 1.45rem; font-weight: 500; margin-bottom: 6px; }
+.check-lead { font-family: var(--serif); color: var(--ink-2); max-width: 78ch; line-height: 1.6; }
+.check-count { margin: 0 0 12px; }
+.check-table .group th { font-style: normal; }
+.check-table .group-note { font-family: var(--sans); font-style: normal; font-weight: 400; font-size: 0.85rem; color: var(--muted); margin-left: 8px; }
+.check-table .group .sw { vertical-align: 0.05em; margin-right: 4px; }
+.check-table .type { min-width: 200px; max-width: 320px; }
+.check-table .hint-sm { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+.check-table .opts { min-width: 260px; }
+.check-table .opt { margin: 0 0 3px; line-height: 1.4; }
+.check-table .opt .id { margin-right: 4px; }
+.check-table tr.gap td { background: color-mix(in srgb, var(--critical) 5%, transparent); }
+.check-table tr.reviewed td { background: color-mix(in srgb, var(--good) 6%, transparent); }
+.check-table .rev { min-width: 170px; }
+.rev-check { display: flex; gap: 6px; align-items: center; font-size: 0.84rem; margin-bottom: 4px; }
+.rev-check input { accent-color: var(--accent); }
+.check-table .note { font-size: 0.82rem; padding: 4px 7px; }
+.table-note-in { font-size: 0.85rem; color: var(--muted); margin-top: 10px; max-width: 90ch; }
+@media print {
+  .check-table .note { border: 0; padding: 0; }
+  .check-table .note:placeholder-shown { display: none; }
+}
+
+/* ---------- model rows (name, provider, model, URL, key) ---------- */
+.model-row {
+  display: grid; grid-template-columns: 22px minmax(120px, 0.9fr) minmax(170px, 1.1fr) minmax(170px, 1.2fr);
+  grid-template-areas: "on name prov model" ". url url url" ". key key act" ". msg msg msg";
+  gap: 6px 12px; align-items: end; padding: 14px 0; border-bottom: 1px solid var(--hair);
+}
+.model-row > .enabled { grid-area: on; align-self: center; margin-bottom: 10px; accent-color: var(--accent); width: 16px; height: 16px; }
+.model-row > .mfield:nth-of-type(1) { grid-area: name; }
+.model-row > .mfield:nth-of-type(2) { grid-area: prov; }
+.model-row > .mfield:nth-of-type(3) { grid-area: model; }
+.model-row > .mfield-url { grid-area: url; }
+.model-row > .mkey { grid-area: key; }
+.model-row > .mact { grid-area: act; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
+.model-row > .model-msg { grid-area: msg; }
+.mfield { display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; color: var(--muted); min-width: 0; }
+.mfield .mname { font-family: var(--serif); font-size: 1rem; }
+.mono-area { font: 12.5px/1.5 var(--mono); }
+.btn-remove { color: var(--critical-ink); }
+@media (max-width: 900px) {
+  .model-row { grid-template-columns: 22px 1fr 1fr; grid-template-areas: "on name name" ". prov model" ". url url" ". key key" ". act act" ". msg msg"; }
+}
+@media (max-width: 560px) {
+  .model-row { grid-template-columns: 22px 1fr; grid-template-areas: "on name" ". prov" ". model" ". url" ". key" ". act" ". msg"; }
+}
+
+/* ---------- key-flow diagram (inline in the tool) ---------- */
+.keyflow { margin: 0 0 28px; background: var(--sheet); border-radius: 8px; padding: 4px 18px; border: 1px solid var(--hair); }
+.keyflow[open] { padding-bottom: 16px; }
+.keyflow > summary { font-family: var(--serif); font-size: 1.02rem; color: var(--ink); padding: 8px 0; margin: 0; }
+.keyflow-fig { margin: 8px 0 0; }
+.keyflow-svg { width: 100%; height: auto; display: block; max-width: 1000px; }
+.keyflow-fig figcaption { font-family: var(--serif); color: var(--ink-2); font-size: 0.95rem; line-height: 1.55; max-width: 80ch; margin-top: 10px; }
+.kf-box { fill: var(--sheet); stroke: var(--hair); stroke-width: 1.2; }
+.kf-browser { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 1.5; }
+.kf-owner { stroke-dasharray: 5 4; }
+.kf-dot { fill: var(--hair); }
+.kf-title { font: 600 16px var(--serif); fill: var(--ink); }
+.kf-sub { font: 13px var(--sans); fill: var(--ink-2); }
+.kf-strong { font-weight: 600; fill: var(--ink); }
+.kf-prov { font: 600 13px var(--sans); fill: var(--ink); }
+.kf-dom { font: 10px var(--mono); fill: var(--ink-2); }
+.kf-key { fill: color-mix(in srgb, var(--warning) 18%, var(--sheet)); stroke: var(--warning-ink); }
+.kf-keyring, .kf-keystem { fill: none; stroke: var(--warning-ink); stroke-width: 2; }
+.kf-keytext { font: 600 12.5px var(--sans); fill: var(--warning-ink); }
+.kf-label { font: 12px var(--sans); fill: var(--ink-2); }
+.kf-num { font-weight: 700; fill: var(--accent-ink); }
+.kf-files { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.kf-req { stroke: var(--accent); stroke-width: 2; }
+.kf-res { stroke: var(--lab-engineering); stroke-width: 2; }
+.kf-head-files { fill: var(--muted); } .kf-head-req { fill: var(--accent); } .kf-head-res { fill: var(--lab-engineering); }
+.kf-none { stroke: var(--hair); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.kf-x line { stroke: var(--critical); stroke-width: 2.5; }
+.kf-rule { stroke: var(--hair); }
+
+/* ---------- decision drivers ---------- */
+.drivers { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.drv { font-size: 0.75rem; color: var(--ink-2); border: 1px solid var(--hair); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+
+/* ---------- route and inspector ---------- */
+.route { border: 1px solid var(--hair); border-radius: 8px; padding: 6px 16px 10px; margin: 16px 0 6px; max-width: 900px; }
+.route legend { font-family: var(--serif); font-weight: 600; padding: 0 6px; }
+.proxy-settings { border-left: 2px solid var(--accent); padding-left: 14px; margin: 4px 0 4px 26px; }
+.warn-text { color: var(--warning-ink); }
+.ok { color: var(--good-ink); }
+.err { color: var(--critical-ink); }
+.inspector { margin-top: 18px; max-width: 900px; }
+.inspector > summary { font-family: var(--serif); font-size: 1.02rem; color: var(--ink); }
+.insp-bar .check { margin: 0 8px 0 0; }
+.insp-list { display: grid; gap: 6px; max-height: 520px; overflow-y: auto; }
+.insp-item { background: var(--sheet); border: 1px solid var(--hair); border-radius: 6px; padding: 4px 10px; }
+.insp-item > summary { display: flex; flex-wrap: wrap; gap: 4px 12px; font-weight: 400; font-size: 0.86rem; color: var(--ink); margin: 2px 0; }
+.insp-n { font-variant-numeric: tabular-nums; color: var(--muted); }
+.insp-st { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mono-s { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); }
+.insp-h { font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-top: 8px; }
+.insp-body pre { max-height: 300px; overflow: auto; font-size: 11.5px; margin: 4px 0; }
+
+</style>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f4e8c'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-style='italic' fill='white' text-anchor='middle'%3E%CE%BA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<main class="wrap">
+  <header class="masthead">
+    <div class="masthead-text">
+      <h1>TR 24027 Fairness Classifier</h1>
+      <p class="lede">Classifies design decision options by their primary source of potential bias and the specific bias type, following ISO/IEC TR 24027:2021: <span class="nowrap"><i class="sw lab-data"></i> data,</span> <span class="nowrap"><i class="sw lab-cognitive"></i> human cognitive,</span> <span class="nowrap"><i class="sw lab-engineering"></i> engineering,</span> or none. Each option is asked several times per model, and up to three models answer independently, so you get a confidence for every label and a measure of how far the models agree.</p>
+    </div>
+    <aside class="privacy">
+      <h2>Your keys stay with you</h2>
+      <p>The tool runs in your browser. API keys and data go straight to the model providers you choose, or through this site's API proxy only if you choose it.</p>
+    </aside>
+  </header>
+
+  <details class="keyflow" id="keyflow">
+    <summary>How API keys travel when other people use this tool</summary>
+    <figure class="keyflow-fig">
+      <svg class="keyflow-svg" viewBox="0 0 1000 460" role="img" aria-label="Diagram: Vercel's static hosting only sends the tool's files to the visitor's browser. Route A: the browser sends the visitor's own key directly to the model provider. Route B: the browser sends the request, encoded or not, to the API proxy function at /api/proxy in the same Vercel project, which decodes it in memory and forwards it to the provider. The key is readable by the browser and provider, and on route B also by the proxy function; never by the static file hosting." xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="kf-head-kf-files" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-files" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-req" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="kf-head-kf-res" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="kf-head-res" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<g>
+  <rect class="kf-box" x="20" y="30" width="230" height="150" rx="10"/>
+  <text class="kf-title" x="38" y="64">Vercel: static files</text>
+  <text class="kf-sub" x="38" y="86">sends the tool's files</text>
+  <text class="kf-sub" x="38" y="104">(HTML, CSS, JavaScript)</text>
+  <text class="kf-sub kf-strong" x="38" y="140">never receives keys or data</text>
+</g>
+<g>
+  <rect class="kf-box kf-browser" x="340" y="30" width="270" height="180" rx="10"/>
+  <circle class="kf-dot" cx="356" cy="46" r="3.5"/><circle class="kf-dot" cx="368" cy="46" r="3.5"/><circle class="kf-dot" cx="380" cy="46" r="3.5"/>
+  <text class="kf-title" x="358" y="80">Visitor's browser</text>
+  <text class="kf-sub" x="358" y="100">runs the tool; nothing is installed</text>
+  <rect class="kf-key" x="358" y="112" width="228" height="28" rx="14"/>
+  <circle class="kf-keyring" cx="376" cy="126" r="6"/><line class="kf-keystem" x1="382" y1="126" x2="396" y2="126"/><line class="kf-keystem" x1="392" y1="126" x2="392" y2="131"/>
+  <text class="kf-keytext" x="404" y="131">visitor's own key typed here</text>
+  <text class="kf-sub" x="358" y="162">key held in memory; stored only</text>
+  <text class="kf-sub" x="358" y="178">if "Remember keys" is ticked</text>
+  <text class="kf-sub" x="358" y="198">saves report, CSV, JSON (no keys)</text>
+</g>
+<g>
+  <rect class="kf-box kf-owner" x="340" y="290" width="270" height="150" rx="10"/>
+  <text class="kf-title" x="358" y="322">Vercel: API proxy function</text>
+  <text class="kf-sub" x="358" y="344">/api/proxy, same project; route B only</text>
+  <text class="kf-sub" x="358" y="366">decodes encoded requests in memory</text>
+  <text class="kf-sub" x="358" y="386">forwards only to listed providers</text>
+  <text class="kf-sub kf-strong" x="358" y="418">writes no logs, stores no keys</text>
+</g>
+<g>
+  <rect class="kf-box" x="760" y="30" width="220" height="410" rx="10"/>
+  <text class="kf-title" x="778" y="64">Model providers</text>
+  <text class="kf-prov" x="778" y="96">Anthropic (Claude)</text><text class="kf-dom" x="778" y="113">api.anthropic.com</text>
+  <text class="kf-prov" x="778" y="143">OpenAI (GPT)</text><text class="kf-dom" x="778" y="160">api.openai.com</text>
+  <text class="kf-prov" x="778" y="190">Google (Gemini)</text><text class="kf-dom" x="778" y="207">generativelanguage.googleapis.com</text>
+  <text class="kf-prov" x="778" y="237">OpenAI-compatible service</text><text class="kf-dom" x="778" y="254">the base URL you enter</text>
+  <line class="kf-rule" x1="778" y1="280" x2="962" y2="280"/>
+  <text class="kf-sub kf-strong" x="778" y="304">First three accept browser</text>
+  <text class="kf-sub kf-strong" x="778" y="320">calls (CORS)</text>
+  <text class="kf-sub" x="778" y="338">tested 13 October 2026</text>
+  <text class="kf-sub" x="778" y="356">Others: try Check key,</text>
+  <text class="kf-sub" x="778" y="372">else use route B</text>
+  <text class="kf-sub kf-strong" x="778" y="406">Usage is billed to the</text>
+  <text class="kf-sub kf-strong" x="778" y="424">visitor's own key</text>
+</g>
+<g>
+  <rect class="kf-box" x="20" y="260" width="230" height="180" rx="10"/>
+  <text class="kf-title" x="38" y="292">Who can read the key</text>
+  <text class="kf-sub kf-strong" x="38" y="318"><tspan class="kf-num">A</tspan> Direct</text>
+  <text class="kf-sub" x="38" y="336">browser and provider</text>
+  <text class="kf-sub kf-strong" x="38" y="362"><tspan class="kf-num">B</tspan> Via API proxy</text>
+  <text class="kf-sub" x="38" y="380">browser, proxy function</text>
+  <text class="kf-sub" x="38" y="398">(in memory), provider</text>
+  <text class="kf-sub kf-strong" x="38" y="424">Never: the static files</text>
+</g>
+<line class="kf-files" x1="250" y1="100" x2="336" y2="100" marker-end="url(#kf-head-kf-files)"/><text class="kf-label" x="293" y="92" text-anchor="middle">tool files</text>
+<line class="kf-req" x1="610" y1="86" x2="756" y2="86" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="78" text-anchor="middle"><tspan class="kf-num">A</tspan> request + key</text>
+<line class="kf-res" x1="756" y1="130" x2="614" y2="130" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="150" text-anchor="middle">answer</text>
+<line class="kf-req" x1="450" y1="210" x2="450" y2="286" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="440" y="244" text-anchor="end"><tspan class="kf-num">B</tspan> request + key,</text>
+<text class="kf-label" x="440" y="260" text-anchor="end">encoded or not</text>
+<line class="kf-res" x1="520" y1="290" x2="520" y2="214" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="530" y="256" text-anchor="start">answer</text>
+<line class="kf-req" x1="610" y1="334" x2="756" y2="334" marker-end="url(#kf-head-kf-req)"/><text class="kf-label" x="683" y="326" text-anchor="middle">forwarded + key</text>
+<line class="kf-res" x1="756" y1="378" x2="614" y2="378" marker-end="url(#kf-head-kf-res)"/><text class="kf-label" x="685" y="398" text-anchor="middle">answer</text>
+</svg>
+      <figcaption>Each visitor uses and pays for their own key; the site's static hosting on Vercel only sends the tool's files. <b>Route A (direct, the default)</b>: the browser sends the key straight to the provider over HTTPS. <b>Route B (via API proxy, optional)</b>: the request goes to the proxy function of this site (<code>/api/proxy</code>, a Vercel Function), encoded or not; it decodes the request in memory, forwards it only to listed providers and writes no logs, but it does handle the key while forwarding. Keys always travel in request headers or bodies, never in URLs, so they do not appear in hosting access logs. Its code is published as <a href="proxy/handler.js">proxy/handler.js</a>. The request inspector in step 4 shows every request, decoded or as sent. Browser access (CORS) of the three providers was checked on 13 October 2026.</figcaption>
+    </figure>
+  </details>
+
+  <div id="resume-banner" class="banner banner-info" hidden>
+    <span>This browser has an unfinished run.</span>
+    <button type="button" class="btn btn-small" id="resume-open">Open the unfinished run</button>
+    <button type="button" class="btn btn-small btn-ghost" id="resume-discard">Discard it</button>
+  </div>
+
+  <section class="protocol" aria-labelledby="h-protocol">
+    <h2 id="h-protocol" class="section-title">Protocol</h2>
+    <ol class="steps">
+
+      <li class="step" aria-labelledby="h-data">
+        <h3 id="h-data">Load decisions and options</h3>
+        <p class="hint">Upload one or more JSON files. Each option is classified separately; a decision without options is classified as a whole.</p>
+        <div class="row">
+          <label class="btn btn-primary btn-file">Upload JSON files<input type="file" id="file-input" accept=".json,application/json" multiple></label>
+          <span class="or">or use an example:</span>
+          <button type="button" class="btn btn-ghost" data-example="data/ethical-ai-metaverse.json">Ethical AI-metaverse decisions (industry voice), 32 decisions</button>
+          <button type="button" class="btn btn-ghost" data-example="data/sample-small.json">Small sample, 4 options</button>
+        </div>
+        <div id="data-errors" class="errors" role="alert" hidden></div>
+        <div id="data-summary" class="summary" hidden></div>
+        <details class="format">
+          <summary>Input file format</summary>
+<pre>{
+  "title": "My study",                       // optional
+  "context": "Describe the system ...",      // optional, sent with every question
+  "decisions": [
+    {
+      "id": "D1",                              // required, unique
+      "question": "How to ...?",               // required
+      "source": "Practitioner",                // optional, groups results (e.g. voice)
+      "category": "Trust and safety",          // optional
+      "drivers": ["Trust (+)"],                // optional, applies to all options
+      "options": [                             // optional
+        { "id": "D1-O1", "text": "Option A",
+          "drivers": ["Transparency (++)", { "name": "Bias", "effect": "N" }] },
+        "Option B"                             // or just text
+      ]
+    }
+  ]
+}</pre>
+          <p><b>Decision drivers</b> are optional: the quality attributes (forces) a decision or option affects, with an optional effect: ++ strongly supports, + supports, N neutral, - hurts, -- strongly hurts. Drivers on a decision apply to all its options.</p>
+          <p><a href="data/ethical-ai-metaverse.json" download id="example-download">Download the example file</a> to use as a template.</p>
+        </details>
+        <label class="field">System context <span class="field-hint">Sent with every question so models know what the options are for.</span>
+          <textarea id="context" rows="3"></textarea>
+        </label>
+      </li>
+
+      <li class="step" aria-labelledby="h-models">
+        <h3 id="h-models">Choose models and enter API keys</h3>
+        <p class="hint">Pick any provider and model for each row and give it the name you want to see in the report. Use at least three models, ideally from different providers, for the agreement statistics. <em>Check key</em> confirms the key works and lists the models it can use. <em>OpenAI-compatible</em> covers services such as OpenRouter, DeepSeek, Groq, Mistral or a local server; enter its base URL.</p>
+        <div id="model-rows" class="models"></div>
+        <div class="row">
+          <button type="button" class="btn btn-small" id="add-model">Add another model</button>
+          <button type="button" class="btn btn-small btn-ghost" id="reset-models">Restore Claude, GPT and Gemini</button>
+        </div>
+        <fieldset class="route">
+          <legend>Route to the providers</legend>
+          <label class="check"><input type="radio" name="route" value="direct" checked> <span><b>Direct</b> <span class="field-hint">Your browser talks to each provider. Most private: no server is involved.</span></span></label>
+          <label class="check"><input type="radio" name="route" value="proxy"> <span><b>Via API proxy</b> <span class="field-hint">Requests pass through the API proxy of this site (<code>/api/proxy</code>). The proxy handles your key in memory while forwarding it.</span></span></label>
+          <div id="proxy-settings" class="proxy-settings" hidden>
+            <label class="field"><span>API proxy address <span class="field-hint">A full https address, or <code>/api/proxy</code> when this page and the proxy run on the same Vercel project.</span></span><input type="text" id="proxy-url" placeholder="https://your-project.vercel.app/api/proxy" spellcheck="false" autocomplete="off" inputmode="url"></label>
+            <label class="check"><input type="checkbox" id="encode" checked> <span>Encode requests <span class="field-hint">Your key and request are encrypted for the proxy on top of HTTPS, so they cannot be read in logs on the way. The proxy decodes them in memory to call the provider.</span></span></label>
+            <div class="row"><button type="button" class="btn btn-small btn-ghost" id="check-proxy">Check proxy</button><button type="button" class="btn btn-small btn-ghost" id="same-site-proxy" hidden>Use this website's proxy</button><span id="proxy-msg" class="small muted" aria-live="polite"></span></div>
+          </div>
+        </fieldset>
+        <label class="check"><input type="checkbox" id="remember-keys"> <span>Remember keys in this browser <span class="field-hint">Stored unencrypted. Leave off on shared computers.</span></span></label>
+        <label class="check"><input type="checkbox" id="demo-mode"> <span>Use simulated models instead <span class="field-hint">No keys needed. For trying the tool only; the answers are not research data.</span></span></label>
+      </li>
+
+      <li class="step" aria-labelledby="h-settings">
+        <h3 id="h-settings">Set the sampling</h3>
+        <div class="settings">
+          <label class="field"><span>Runs per item, <i>N</i></span><input type="number" id="runs" min="1" max="50" value="10"></label>
+          <label class="field"><span>Temperature</span><input type="number" id="temperature" min="0" max="2" step="0.1" value="0.7"></label>
+          <label class="field"><span>Acceptance threshold</span><input type="number" id="threshold" min="0.25" max="1" step="0.05" value="0.8"></label>
+          <label class="field"><span>Parallel requests per model</span><input type="number" id="concurrency" min="1" max="20" value="4"></label>
+          <label class="field"><span>Requests per minute, 0 = no limit</span><input type="number" id="rpm" min="0" max="10000" value="0"></label>
+          <label class="field"><span>Retries after an error</span><input type="number" id="retries" min="0" max="10" value="5"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="include-drivers" checked> <span>Include decision drivers in the prompt <span class="field-hint">When the input has drivers. Turn off to classify without them and compare.</span></span></label>
+        <label class="check"><input type="checkbox" id="shuffle" checked> <span>Shuffle the order of labels on every run <span class="field-hint">Checks that answers do not depend on the order labels are listed in.</span></span></label>
+        <details class="advanced">
+          <summary>Prompt and label definitions</summary>
+          <p class="hint">The default definitions paraphrase the bias sources in ISO/IEC TR 24027:2021. Check the wording against the standard before you publish; the report records exactly what was used.</p>
+          <label class="field">System prompt<textarea id="system-prompt" rows="3"></textarea></label>
+          <div id="defs"></div>
+          <label class="field"><span>Bias types per source, following ISO/IEC TR 24027:2021 clause 6 <span class="field-hint">JSON. Models choose one bias type with each label; the report's checklist lists every type. The default clause numbers are the tool author's reading of the standard: verify them.</span></span><textarea id="taxonomy" rows="12" spellcheck="false" class="mono-area"></textarea></label>
+          <p id="taxonomy-error" class="errors" role="alert" hidden></p>
+          <button type="button" class="btn btn-small btn-ghost" id="reset-prompt">Restore default prompt, definitions and bias types</button>
+          <details><summary>Preview the prompt for the first item</summary><pre id="prompt-preview"></pre></details>
+        </details>
+      </li>
+
+      <li class="step" aria-labelledby="h-run">
+        <h3 id="h-run">Run the classification</h3>
+        <p id="estimate" class="estimate"></p>
+        <div class="row">
+          <button type="button" class="btn btn-primary" id="start">Start classification</button>
+          <button type="button" class="btn" id="cancel" hidden>Cancel</button>
+          <button type="button" class="btn" id="resume" hidden>Resume the run</button>
+        </div>
+        <div id="progress" class="progress" hidden></div>
+        <div id="run-log" class="log" hidden aria-live="polite"></div>
+        <details class="inspector" id="inspector">
+          <summary>Request inspector <span id="insp-count" class="muted small"></span></summary>
+          <p class="hint">Every request this page sends, shown decoded or exactly as it left the browser. API keys are always shortened. The records stay in this page only and are never saved.</p>
+          <div class="row insp-bar" role="group" aria-label="Inspector view">
+            <label class="check"><input type="radio" name="insp-view" value="decoded" checked> <span>Decoded</span></label>
+            <label class="check"><input type="radio" name="insp-view" value="sent"> <span>As sent</span></label>
+            <button type="button" class="btn btn-small btn-ghost" id="insp-clear">Clear</button>
+          </div>
+          <div id="insp-list" class="insp-list"><p class="muted small">No requests yet. Run a classification or check a key.</p></div>
+        </details>
+      </li>
+    </ol>
+  </section>
+
+  <section id="results-section" class="results" aria-labelledby="h-results">
+    <div class="results-bar">
+      <h2 id="h-results" class="section-title">Results</h2>
+      <div class="row">
+        <label class="btn btn-ghost btn-file">Open saved results<input type="file" id="load-results" accept=".json,.html,application/json,text/html"></label>
+        <button type="button" class="btn" id="dl-html" disabled>Download report</button>
+        <button type="button" class="btn" id="dl-csv" disabled>Download CSV</button>
+        <button type="button" class="btn" id="dl-json" disabled>Download full data</button>
+      </div>
+    </div>
+    <div id="dashboard"><p class="empty">Results appear here as soon as a run starts. You can also open a results file (JSON) or a report (HTML) saved earlier.</p></div>
+  </section>
+
+  <footer class="foot">
+    <p>Open source, MIT licence. <a href="https://github.com/" id="repo-link">Source code</a></p>
+  </footer>
+</main>
+<script>globalThis.__TR24027_EXAMPLES__ = {"data/ethical-ai-metaverse.json":{"title":"Ethical considerations for AI-metaverse integration: industry voice","context":"The system is an AI-integrated metaverse platform with eCommerce: an immersive 3D virtual world (web and native mobile apps) where users shop, interact through avatars, and use AI-aided features such as recommendations, content moderation, monitoring and customer service. Each design decision is an ethical architectural design decision for integrating AI into this metaverse.","notes":"Industry voice. Source of truth: the QOC model ADD4Ethics.py (codeable_models) behind the manuscript 'From Practitioner to Industry Voice: LLM-RAG Assisted Ground Truth Theory for Ethical ADD in AI-Metaverse Integration' (SHA-256 of ADD4Ethics.py: 82a99c0cf81afa4416b97815fe83cd89eb82f6b389328f45efe03db0d8c64481). Questions = decision classes (the three grouping decisions are left out), options = design_solution classes linked to each question (full text; options linked to several questions appear under each), drivers = force links of each option with their effect (++, +, N). 'paper_label' is the short label used in the manuscript's tables, where one exists. Questions without options in the model are classified at question level. Category numbers follow the manuscript (the model's Category 8 is C7 here).","decisions":[{"id":"P2-C1-Q1","source":"Industry","category":"Digital Identity Framework","question":"How does accountability change according to the levels of user influence over an AI system?","background":"S09","options":[{"id":"P2-C1-Q1-O1","text":"Define different levels of accountability based on user influence over AI system decisions","drivers":["Accountability (+)"],"paper_label":"Define accountability levels","background":"S09"},{"id":"P2-C1-Q1-O2","text":"Establish clear guidelines for responsibility assignment in hybrid human-AI decision-making","drivers":["Accountability (+)"],"paper_label":"Clear responsibility guidelines","background":"S09"}]},{"id":"P2-C1-Q2","source":"Industry","category":"Digital Identity Framework","question":"How to Document the AI system's role and decision-making authority clearly?","background":"S09","options":[{"id":"P2-C1-Q2-O1","text":"AI is embedded in a human decision-making process","drivers":["Transparency (+)"],"paper_label":"Human-AI embedded process","background":"S09"},{"id":"P2-C1-Q2-O2","text":"AI is making decisions on its own","drivers":["Transparency (+)"],"paper_label":"AI autonomous decisions","background":"S09"},{"id":"P2-C1-Q2-O3","text":"It is hybrid","drivers":["Transparency (+)"],"paper_label":"Hybrid approach","background":"S09"}]},{"id":"P2-C1-Q3","source":"Industry","category":"Digital Identity Framework","question":"Which group's values are expressed by our AI system and why?","background":"S09","options":[{"id":"P2-C1-Q3-O1","text":"Identify and explicitly state the values embedded in the AI system","drivers":["Explainability (+)"],"paper_label":"Identify embedded values","background":"S09"}]},{"id":"P2-C1-Q4","source":"Industry","category":"Digital Identity Framework","question":"How do we change or adjust the values reflected by our AI system as our values evolve over time?","background":"S09","options":[{"id":"P2-C1-Q4-O1","text":"Establish team consensus process for value identification and prioritization","drivers":["Trust (+)"],"paper_label":"Team consensus process","background":"S09"}]},{"id":"P2-C2-Q1","source":"Industry","category":"Bias Mitigation Strategy","question":"How to prevent bias in AI systems?","background":"S26","options":[{"id":"P2-C2-Q1-O1","text":"inclusive product language initiative to prevent bias reinforcement in technical content","drivers":["Bias (N)"],"rationale":"developer mindset","paper_label":"Inclusive language initiative","background":"S26"}]},{"id":"P2-C2-Q2","source":"Industry","category":"Bias Mitigation Strategy","question":"How to identify and mitigate AI bias?","background":"S02, S09","options":[{"id":"P2-C2-Q2-O1","text":"Ensure clean unbiased training data","drivers":["Bias (N)"],"rationale":"ensuring clean unbiased","paper_label":"Clean training data","background":"S02"},{"id":"P2-C2-Q2-O2","text":"Real-time analysis of AI brings to light both intentional and unintentional biases","drivers":["Bias (+)"],"rationale":"realtime analysis","paper_label":"Real-time bias analysis","background":"S09"},{"id":"P2-C2-Q2-O3","text":"Model verification techniques for rigorous testing and validation of AI models","drivers":["Bias (+)"],"rationale":"model verification","paper_label":"Model verification","background":"S09"}]},{"id":"P2-C2-Q3","source":"Industry","category":"Bias Mitigation Strategy","question":"How to mitigate AI risks using techniques?","background":"S11, S26","options":[{"id":"P2-C2-Q3-O1","text":"AI risk assessment is the starting point for Responsible AI","drivers":["Trust (+)","Responsible (+)","Human Centric (+)","Governance (+)","Bias (+)","Safety (++)"],"paper_label":"Safety protocols","background":"S01, S21"},{"id":"P2-C2-Q3-O2","text":"Deploy automated bias detection and mitigation tools throughout AI lifecycle","drivers":["Bias (+)"],"paper_label":"Automated bias detection","background":"S11"},{"id":"P2-C2-Q3-O3","text":"Consequence Scanning - responsible innovation methodology developed by U.K.-based think tank Doteveryo","drivers":["Trust (N)"],"paper_label":"Consequence scanning","background":"S26"}]},{"id":"P2-C3-Q1","source":"Industry","category":"Data Protection Standards","question":"How to protect data privacy in AI?","background":"S07","options":[{"id":"P2-C3-Q1-O1","text":"Prioritize data privacy from the outset by implementing best practices in data encryption, anonymization, and secure data storage","drivers":["Privacy (N)","Ethics (N)"],"paper_label":"Privacy-by-design","background":"S07"},{"id":"P2-C3-Q1-O2","text":"Create and adhere to a well-defined ethical AI framework to guide the development and deployment of AI solutions","drivers":["Privacy (N)","Ethics (N)"],"paper_label":"Ethical AI framework","background":"S07"},{"id":"P2-C3-Q1-O3","text":"Invest in a scalable and robust data infrastructure with secure data management practices","drivers":["Privacy (N)"],"paper_label":"Scalable infrastructure","background":"S07"},{"id":"P2-C3-Q1-O4","text":"Conduct regular audits and assessments of AI systems to ensure compliance with privacy regulations","drivers":["Privacy (N)","Ethics (N)"],"paper_label":"Compliance audits","background":"S01, S03, S07"},{"id":"P2-C3-Q1-O5","text":"Include guidelines for fairness, transparency, accountability, and the mitigation of biases","drivers":["Bias (N)","Fairness (N)","Transparency (N)","Accountability (N)"],"paper_label":"Fairness guidelines","background":"S07"},{"id":"P2-C3-Q1-O6","text":"Implement comprehensive data protection measures and privacy controls","drivers":["Privacy (+)"],"paper_label":"Data protection measures","background":"S09"}]},{"id":"P2-C3-Q2","source":"Industry","category":"Data Protection Standards","question":"What regulatory and compliance issues should organizations consider in AI adoption?","background":"S26","options":[{"id":"P2-C3-Q2-O1","text":"Implement AI-powered fraud detection software to minimize costs and enhance consumer identity verifications","drivers":["Trust (+)"],"paper_label":"AI fraud detection","background":"S09"},{"id":"P2-C3-Q2-O2","text":"AI-assisted customer service automation","drivers":["Trust (+)","Transparency (+)"],"background":"S04"}]},{"id":"P2-C3-Q3","source":"Industry","category":"Data Protection Standards","question":"How to manage Content Safety, Privacy, and Security?","background":"S11","options":[{"id":"P2-C3-Q3-O1","text":"Develop comprehensive privacy protection and data governance framework, including localized LLMs and private LLM development to mitigate data exposure risks","drivers":["Privacy (+)"],"paper_label":"Privacy framework","background":"S11"},{"id":"P2-C3-Q3-O2","text":"Implement multi-layered security controls and monitoring systems","drivers":["Security (++)"],"paper_label":"Multi-layer security","background":"S11"},{"id":"P2-C3-Q3-O3","text":"Implement audit trails and operational monitoring for full system transparencyn","drivers":["Transparency (++)"],"paper_label":"Audit trails","background":"S11"}]},{"id":"P2-C4-Q1","source":"Industry","category":"Content Algorithm Design","question":"How to manage AI risks using content filtering?","background":"S01, S10","options":[{"id":"P2-C4-Q1-O1","text":"Filter content to protect privacy and prevent data leakage","drivers":["Transparency (++)"],"paper_label":"Privacy protection filter","background":"S10"},{"id":"P2-C4-Q1-O2","text":"Implement content filtering at platform level to reduce harmful content generation","drivers":["Transparency (+)"],"paper_label":"Platform-level filtering","background":"S10"},{"id":"P2-C4-Q1-O3","text":"Implement content filtering at application level for targeted risk mitigation","drivers":["Transparency (+)"],"paper_label":"Application-level filter","background":"S10"}]},{"id":"P2-C4-Q2","source":"Industry","category":"Content Algorithm Design","question":"How to measure AI model and application performance?","background":"S11","options":[{"id":"P2-C4-Q2-O1","text":"Implement continuous safety monitoring and incident response systems","drivers":["Safety (+)"],"paper_label":"Safety monitoring","background":"S11"},{"id":"P2-C4-Q2-O2","text":"Provide comprehensive system documentation and user-facing explanations","drivers":["Transparency (+)"],"paper_label":"System documentation","background":"S11"},{"id":"P2-C4-Q2-O3","text":"Establish clear accountability frameworks and governance structures","drivers":["Accountability (++)"],"paper_label":"Accountability framework","background":"S11"}]},{"id":"P2-C4-Q3","source":"Industry","category":"Content Algorithm Design","question":"How to assess AI system quality?","background":"S12, S13, S14, S15","options":[]},{"id":"P2-C5-Q1","source":"Industry","category":"User Privacy Controls","question":"How do we keep track of ethical design choices and considerations after the launch of the AI system?","background":"S09","options":[{"id":"P2-C5-Q1-O1","text":"Implement systematic documentation and record-keeping processes","drivers":["Transparency (+)"],"paper_label":"Systematic documentation","background":"S09"}]},{"id":"P2-C5-Q2","source":"Industry","category":"User Privacy Controls","question":"How can organizations address mistrust in their ability to develop and use AI ethically?","background":"S03","options":[{"id":"P2-C5-Q2-O1","text":"assessment of emerging AI security","drivers":["Ethics (+)"],"rationale":"security measurement","paper_label":"Security assessment","background":"S03"}]},{"id":"P2-C5-Q3","source":"Industry","category":"User Privacy Controls","question":"How can organizations embed trust within their GenAI applications?","background":"S03, S26","options":[{"id":"P2-C5-Q3-O1","text":"education and training would be most effective in ensuring everyone understand what GenAI can and cannot do","drivers":["Trust (+)","Privacy (+)"],"rationale":"trainning","paper_label":"Education programs","background":"S03"},{"id":"P2-C5-Q3-O2","text":"regular audits and monitoring","drivers":["Trust (+)","Fairness (++)"],"rationale":"monitoring","paper_label":"Regular audits","background":"S03"},{"id":"P2-C5-Q3-O3","text":"human oversight","drivers":["Trust (++)","Transparency (++)"],"rationale":"business analysis","paper_label":"Human oversight","background":"S03"}]},{"id":"P2-C6-Q1","source":"Industry","category":"Fairness Infrastructure","question":"How to improve developer productivity?","background":"S02, S26","options":[{"id":"P2-C6-Q1-O1","text":"Developer-first mindset to improve productivity and satisfaction, leveraging open source AI tools for internal management","drivers":["Bias (N)"],"rationale":"developer mindset","paper_label":"Developer-first mindset","background":"S02, S26"}]},{"id":"P2-C6-Q2","source":"Industry","category":"Fairness Infrastructure","question":"How to manage technical debt?","background":"S02","options":[{"id":"P2-C6-Q2-O1","text":"Preventative wellness assessments rooted in business impact","drivers":["Technical Debt (+)"],"rationale":"business analysis","paper_label":"Preventative assessments","background":"S02"}]},{"id":"P2-C6-Q3","source":"Industry","category":"Fairness Infrastructure","question":"How can copilots support the banking workforce?","background":"S04","options":[{"id":"P2-C6-Q3-O1","text":"AI-powered tools that enhance productivity","drivers":["Trust (+)","Transparency (+)"],"rationale":"enhananced productivity","paper_label":"AI productivity tools","background":"S04"},{"id":"P2-C6-Q3-O2","text":"Automated document analysis and processing","drivers":["Trust (+)"],"rationale":"auto documentation","paper_label":"Document automation","background":"S04"},{"id":"P2-C6-Q3-O3","text":"AI-assisted customer service automation","drivers":["Trust (+)","Transparency (+)"],"rationale":"auto customer services","paper_label":"Customer service AI","background":"S04"},{"id":"P2-C6-Q3-O4","text":"Implementation of AI safety and ethical guardrails, including responsible generative AI guidelines through model safety improvements, product and feature guardrails, and policy safeguards","drivers":["Ethics (++)","Bias (+)","Privacy (++)"],"rationale":"implementation of AI safety and ethical guardrails","background":"S04"},{"id":"P2-C6-Q3-O5","text":"Comprehensive data infrastructure for ethical AI","drivers":["Ethics (++)","Privacy (++)"],"rationale":"comprehensive data infrastructure","background":"S04"}]},{"id":"P2-C6-Q4","source":"Industry","category":"Fairness Infrastructure","question":"How will banks make ethical AI deployment happen?","background":"S04","options":[{"id":"P2-C6-Q4-O1","text":"Comprehensive data infrastructure for ethical AI","drivers":["Ethics (++)","Privacy (++)"],"rationale":"comprehensive data infrastructure","paper_label":"Data infrastructure","background":"S04"},{"id":"P2-C6-Q4-O2","text":"Sophisticated data processing capabilities","drivers":["Ethics (++)","Bias (+)"],"rationale":"sophisticate data processing capabilities","paper_label":"Data processing","background":"S04"},{"id":"P2-C6-Q4-O3","text":"Implementation of AI safety and ethical guardrails, including responsible generative AI guidelines through model safety improvements, product and feature guardrails, and policy safeguards","drivers":["Ethics (++)","Bias (+)","Privacy (++)"],"rationale":"implementation of AI safety and ethical guardrails","paper_label":"Safety guardrails","background":"S04"},{"id":"P2-C6-Q4-O4","text":"AI-assisted customer service automation","drivers":["Trust (+)","Transparency (+)"],"rationale":"auto customer services","background":"S04"}]},{"id":"P2-C6-Q5","source":"Industry","category":"Fairness Infrastructure","question":"How can organizations address insufficient infrastructure and tooling to host and monitor AI use??","background":"S03","options":[{"id":"P2-C6-Q5-O1","text":"trustworthy and ethical AI","drivers":["Trust (++)"],"rationale":"trustworthy and ethical AI","paper_label":"Trustworthy AI","background":"S03"}]},{"id":"P2-C7-Q1","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How can companies ensure sustained value from AI investments?","background":"S01","options":[{"id":"P2-C7-Q1-O1","text":"systematic, transparent approaches to confirming sustained value from their AI investments","drivers":["Trust (N)","Responsible (N)"],"rationale":"ensures you can prove your AI is working as intended","paper_label":"Transparent approaches","background":"S01"},{"id":"P2-C7-Q1-O2","text":"independent perspective on your AI governance and controls","drivers":["Privacy (N)","Security (N)","Data Protection Issue (N)"],"rationale":"provides objective oversight to catch problems before they become costly failures","paper_label":"Independent oversight","background":"S01"}]},{"id":"P2-C7-Q2","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How to manage AI risks?","background":"S01, S10, S16, S21","options":[{"id":"P2-C7-Q2-O1","text":"Rigorous assessment and validation of AI risk management practices and controls","drivers":["Trust (N)","Responsible (N)"],"rationale":"verifies your risk management actually works","paper_label":"Assessment validation","background":"S01"},{"id":"P2-C7-Q2-O2","text":"AI risk assessment is the starting point for Responsible AI","drivers":["Trust (+)","Responsible (+)","Human Centric (+)","Governance (+)","Bias (+)","Safety (++)"],"rationale":"you must understand your risks first","paper_label":"Risk protocols","background":"S01, S21"},{"id":"P2-C7-Q2-O3","text":"standardized, AI-focused risk taxonomy","drivers":["Trust (N)","Responsible (N)"],"rationale":"gives you consistent categories to organize and evaluate risks","paper_label":"Standardized taxonomy","background":"S01"},{"id":"P2-C7-Q2-O4","text":"Proactive risk management approach","drivers":["Trust (N)","Responsible (N)"],"background":"S01"},{"id":"P2-C7-Q2-O5","text":"investing in AI research and development; fostering an inclusive AI-enabling ecosystem; shaping an enabling interoperable governance and policy environment for AI; building human capacity and preparing for labour market transformation; and international co-operation for trustworthy AI","drivers":["Human Centric (+)","Trust (+)","Governance (+)","Bias (+)"],"paper_label":"AI research investment","background":"S21"},{"id":"P2-C7-Q2-O6","text":"inclusive growth, sustainable development and well-being; respect for the rule of law, human rights and democratic values, including fairness and privacy; transparency and explainability; robustness, security and safety; and accountability","drivers":["Human Centric (+)","Trust (+)","Governance (+)","Bias (+)","Fairness (+)"],"paper_label":"Inclusive growth","background":"S21"}]},{"id":"P2-C7-Q3","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How to prevent AI agents from harmful activity?","background":"S01","options":[{"id":"P2-C7-Q3-O1","text":"human-led management model","drivers":["Trust (N)","Responsible (N)"],"rationale":"ensuring humans remain in control of day-to-day AI agent activities","paper_label":"Human-led management","background":"S01"},{"id":"P2-C7-Q3-O2","text":"A holistic Responsible AI strategy can provide the framework for addressing this challenge","drivers":["Trust (+)","Responsible (+)"],"rationale":"providing the organizational framework that enables effective human oversight","paper_label":"Responsible AI strategy","background":"S01"}]},{"id":"P2-C7-Q4","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How can organizations face the challenge of implementing AI responsibly?","background":"S05, S16, S17","options":[{"id":"P2-C7-Q4-O1","text":"The EY Responsible AI-framework offers a practical approach to address these challenges, complemented by Ethics by Design methodology for embedding ethical principles","drivers":["Ethics (++)","Trust (++)"],"rationale":"Responsible AI-framework","paper_label":"EY Responsible AI framework","background":"S05, S16"},{"id":"P2-C7-Q4-O2","text":"The seven guidelines that EY has established for responsible engagement with AI","drivers":["Ethics (+)"],"rationale":"7 guidelines","paper_label":"Seven guidelines","background":"S05"},{"id":"P2-C7-Q4-O3","text":"designate someone within the organization who is responsible for the development and implementation of AI-systems","drivers":["Ethics (+)"],"rationale":"desinate skilled person","background":"S05","paper_label":"Skilled personnel"},{"id":"P2-C7-Q4-O4","text":"Make information about the AI-system easily accessible to both end-users and system designers","drivers":["Transparency (+)"],"rationale":"accessible info","background":"S05, S17"},{"id":"P2-C7-Q4-O5","text":"Ensure a diverse and representative dataset that reflects the diversity of society to prevent bias","drivers":["Fairness (+)"],"rationale":"ensure dataset","background":"S05"},{"id":"P2-C7-Q4-O6","text":"Ensure that the design, implementation, and use of AI-systems comply with relevant laws and regulations","drivers":["Privacy (+)"],"rationale":"ensure regulation","background":"S05"}]},{"id":"P2-C7-Q5","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How can organizations leverage the power of AI responsibly?","background":"S26","options":[{"id":"P2-C7-Q5-O1","text":"explore new avenues for targeting their audience with increased efficiency and precision","drivers":["Privacy (N)"],"paper_label":"Efficient targeting","background":"S26"}]},{"id":"P2-C7-Q6","source":"Industry","category":"AI Challenges for Societies and Economies","question":"What are the best practices for deploying AI in my industry?","background":"S26","options":[{"id":"P2-C7-Q6-O1","text":"Utilize AI-driven product listings for improved searchability and shopping convenience","drivers":["Trust (+)"],"paper_label":"AI-driven listings","background":"S26"}]},{"id":"P2-C7-Q7","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How can organizations address the lack of right people and skillsets for ethical GenAI deployment?","background":"S03","options":[{"id":"P2-C7-Q7-O1","text":"development and deployment of governance capabilities across the enterprise","drivers":["Ethics (++)","Explainability (++)"],"rationale":"business analysis","background":"S03"}]},{"id":"P2-C7-Q8","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How to manage AI governance framework?","background":"S21","options":[{"id":"P2-C7-Q8-O1","text":"Develop comprehensive governance frameworks that address multiple dimensions of AI ethics and safety","drivers":["Trust (+)"],"rationale":"business analysis","background":"S21"}]},{"id":"P2-C7-Q9","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How can organizations overcome inadequate governance models and policies for ethical GenAI?","background":"S03","options":[{"id":"P2-C7-Q9-O1","text":"assessment of emerging AI risks","drivers":["Ethics (++)","Accountability (++)"],"rationale":"risk assessment","background":"S03"}]},{"id":"P2-C7-Q10","source":"Industry","category":"AI Challenges for Societies and Economies","question":"What approach to risk taking would you recommend in an AI-powered company?","background":"S12, S13, S14, S15","options":[]},{"id":"P2-C7-Q11","source":"Industry","category":"AI Challenges for Societies and Economies","question":"How to do AI Governance and Infrastructure","background":"S21","options":[{"id":"P2-C7-Q11-O1","text":"AI risk assessment is the starting point for Responsible AI","drivers":["Trust (+)","Responsible (+)","Human Centric (+)","Governance (+)","Bias (+)","Safety (++)"],"background":"S01, S21"},{"id":"P2-C7-Q11-O2","text":"investing in AI research and development; fostering an inclusive AI-enabling ecosystem; shaping an enabling interoperable governance and policy environment for AI; building human capacity and preparing for labour market transformation; and international co-operation for trustworthy AI","drivers":["Human Centric (+)","Trust (+)","Governance (+)","Bias (+)"],"background":"S21"},{"id":"P2-C7-Q11-O3","text":"inclusive growth, sustainable development and well-being; respect for the rule of law, human rights and democratic values, including fairness and privacy; transparency and explainability; robustness, security and safety; and accountability","drivers":["Human Centric (+)","Trust (+)","Governance (+)","Bias (+)","Fairness (+)"],"background":"S21"}]}]},"data/sample-small.json":{"title":"Small sample (4 options) for a quick test run","context":"The system is an eCommerce metaverse: an immersive 3D virtual world (web and native mobile apps) where users shop, interact through avatars, use AI-aided features such as recommendations, moderation and monitoring, and complete secure transactions.","decisions":[{"id":"S-D1","source":"Practitioner","category":"Immersive experience","question":"How to accommodate eCommerce metaverse users with disabilities or access inequality?","options":[{"id":"S-D1-O1","text":"Assistive technology compatibility"},{"id":"S-D1-O2","text":"Multilingual support"}]},{"id":"S-D2","source":"Industry","category":"Bias Mitigation Strategy","question":"How to identify and mitigate AI bias?","options":[{"id":"S-D2-O1","text":"Clean training data","drivers":["Bias (N)"]}]},{"id":"S-D3","source":"Practitioner","category":"Trust and safety","question":"How to avoid breaches of security and privacy violations?","options":[{"id":"S-D3-O1","text":"Strong data encryption","drivers":[{"name":"Security","effect":"++"}]}]}]}};</script>
+<script type="module">
+// ---- core.js ----
+const __mod_core = (() => {
+// core.js — pure logic (no network, no DOM). Usable in the browser and in Node for tests.
+// Prompt building, response parsing, self-consistency aggregation, and agreement metrics.
+
+const LABELS = ["Data", "Cognitive", "Engineering", "None"];
+const SOURCE_LABELS = ["Data", "Cognitive", "Engineering"];
+
+// Default definitions are the tool author's paraphrase of the three bias sources
+// discussed in ISO/IEC TR 24027:2021. Users should check and edit them against the standard.
+const DEFAULT_DEFINITIONS = {
+  Data:
+    "Bias originating in the data used to build, test or operate an AI-aided feature, e.g. non-representative or skewed samples, missing data for some groups, or biased labelling processes.",
+  Cognitive:
+    "Bias originating in the human judgement of the people who design, build, label, operate or oversee the system, e.g. automation bias, in-group bias, confirmation bias, or assumptions about who the 'typical' user is.",
+  Engineering:
+    "Bias introduced by technical and design decisions about the system, e.g. choice of algorithm or optimisation objective, feature selection, thresholds, platform or device requirements, or architectural choices that work worse for some groups of people.",
+  None:
+    "The option has no plausible pathway to systematically different treatment of certain people or groups compared with others.",
+};
+
+const DEFAULT_SYSTEM_PROMPT =
+  "You are an expert in AI fairness and software architecture. You classify architectural design decision options by the primary source of potential unwanted bias, following the bias sources described in ISO/IEC TR 24027:2021 (Bias in AI systems and AI aided decision making). Answer with JSON only.";
+
+const DEFAULT_CONTEXT =
+  "The system is an eCommerce metaverse: an immersive 3D virtual world (web and native mobile apps) where users shop, interact through avatars, use AI-aided features such as recommendations, moderation and monitoring, and complete secure transactions.";
+
+// Bias types under each source, following the structure of ISO/IEC TR 24027:2021 clause 6
+// ("Sources of unwanted bias in AI systems"). Clause numbers and the short descriptions are the
+// tool author's reading of the standard: verify them against the standard before publication.
+// The taxonomy is stored with every run, so reports show exactly which list was used.
+const DEFAULT_TAXONOMY = {
+  Data: [
+    { id: "6.3.2", name: "Statistical bias", hint: "selection, sampling, coverage or non-response bias; confounding variables" },
+    { id: "6.3.3", name: "Data labels and labelling process", hint: "biased, subjective or inconsistent annotation" },
+    { id: "6.3.4", name: "Non-representative sampling", hint: "some groups missing or under-represented in the data" },
+    { id: "6.3.5", name: "Missing features and labels", hint: "attributes or labels absent more often for some groups" },
+    { id: "6.3.6", name: "Data processing", hint: "cleaning, filtering or transformation that treats groups differently" },
+    { id: "6.3.7", name: "Simpson's paradox", hint: "a trend that reverses when groups are combined" },
+    { id: "6.3.8", name: "Data aggregation", hint: "combining data hides differences between groups" },
+    { id: "6.3.9", name: "Distributed training", hint: "uneven data across federated or distributed sources" },
+    { id: "6.3.10", name: "Other sources of data bias", hint: "any other data-related source" },
+  ],
+  Cognitive: [
+    { id: "6.2.2", name: "Automation bias", hint: "people over-rely on automated outputs" },
+    { id: "6.2.3", name: "Group attribution bias", hint: "assuming individuals share the traits of their group" },
+    { id: "6.2.4", name: "Implicit bias", hint: "unconscious associations of designers or operators" },
+    { id: "6.2.5", name: "Confirmation bias", hint: "favouring information that confirms existing beliefs" },
+    { id: "6.2.6", name: "In-group bias", hint: "favouring people like the team itself" },
+    { id: "6.2.7", name: "Out-group homogeneity bias", hint: "seeing members of other groups as all alike" },
+    { id: "6.2.8", name: "Societal bias", hint: "historical or social inequities carried into the system" },
+    { id: "6.2.9", name: "Rule-based system design", hint: "biased hand-written rules, policies or guidelines" },
+    { id: "6.2.10", name: "Requirements bias", hint: "biased or incomplete requirements and specifications" },
+    { id: "6.2.1", name: "Other human cognitive bias", hint: "general clause, when no specific type fits" },
+  ],
+  Engineering: [
+    { id: "6.4.2", name: "Feature engineering", hint: "chosen inputs or proxy variables that disadvantage groups" },
+    { id: "6.4.3", name: "Algorithm selection", hint: "choice of model, algorithm or optimisation objective" },
+    { id: "6.4.4", name: "Hyperparameter tuning", hint: "thresholds and tuning that work worse for some groups" },
+    { id: "6.4.5", name: "Informativeness", hint: "inputs that are less informative for some groups" },
+    { id: "6.4.6", name: "Model bias", hint: "the model's structural tendency to favour some groups" },
+    { id: "6.4.7", name: "Model interaction", hint: "feedback loops between the system, users and other models" },
+    { id: "6.4.1", name: "Other engineering decision", hint: "general clause, e.g. platform, device or architecture choices" },
+  ],
+};
+
+const CLAUSE_HEADINGS = { Cognitive: "6.2 Human cognitive biases", Data: "6.3 Data bias", Engineering: "6.4 Bias introduced by engineering decisions" };
+
+// Flat lookup: clause id -> { id, name, hint, source }
+function clauseIndex(taxonomy = DEFAULT_TAXONOMY) {
+  const idx = {};
+  for (const src of SOURCE_LABELS) for (const c of taxonomy[src] || []) idx[c.id] = { ...c, source: src };
+  return idx;
+}
+
+function validateTaxonomy(t) {
+  const errs = [];
+  if (!t || typeof t !== "object") return ["The bias-type list must be a JSON object."];
+  const seen = new Set();
+  for (const src of SOURCE_LABELS) {
+    if (!Array.isArray(t[src]) || !t[src].length) errs.push(`"${src}" must be a non-empty list.`);
+    else t[src].forEach((c, i) => {
+      if (!c || !c.id || !c.name) errs.push(`${src}[${i}] needs "id" and "name".`);
+      else if (seen.has(c.id)) errs.push(`Clause id "${c.id}" appears twice.`);
+      else seen.add(c.id);
+    });
+  }
+  return errs;
+}
+
+// ---------- decision drivers (optional input) ----------
+// Drivers are the quality attributes (forces) a decision option affects, as in QOC analysis.
+// Accepted forms: "Transparency (+)", "Bias", { "name": "Privacy", "effect": "++" }.
+// Effects: ++ strongly supports, + supports, N neutral, - hurts, -- strongly hurts, "" not stated.
+const DRIVER_EFFECTS = ["++", "+", "N", "-", "--", ""];
+
+function parseDriver(d) {
+  if (d == null) return null;
+  if (typeof d === "string") {
+    const m = d.trim().match(/^(.*?)\s*\(\s*(\+\+|\+|N|n|-|--|−|−−)\s*\)\s*$/);
+    const name = (m ? m[1] : d).trim();
+    const effect = m ? m[2].replace(/−/g, "-").toUpperCase() : "";
+    return name ? { name, effect } : null;
+  }
+  if (typeof d === "object" && d.name) {
+    const effect = String(d.effect ?? "").trim().replace(/−/g, "-").toUpperCase();
+    return { name: String(d.name).trim(), effect: DRIVER_EFFECTS.includes(effect) ? effect : "" };
+  }
+  return null;
+}
+
+function normalizeDrivers(list) {
+  if (!Array.isArray(list)) return [];
+  const out = new Map();
+  for (const d of list) {
+    const p = parseDriver(d);
+    if (p) out.set(p.name.toLowerCase(), p);
+  }
+  return [...out.values()];
+}
+
+const driverText = (d) => (d.effect ? `${d.name} (${d.effect})` : d.name);
+
+function validateDrivers(list, where, errors) {
+  if (list === undefined) return;
+  if (!Array.isArray(list)) return errors.push(`${where}.drivers must be a list.`);
+  list.forEach((d, k) => {
+    if (!parseDriver(d)) errors.push(`${where}.drivers[${k}] needs a name, e.g. "Transparency (+)".`);
+    else if (typeof d === "object" && d.effect != null && !DRIVER_EFFECTS.includes(String(d.effect).trim().replace(/−/g, "-").toUpperCase()))
+      errors.push(`${where}.drivers[${k}].effect must be one of ++, +, N, -, --.`);
+  });
+}
+
+// ---------- input handling ----------
+
+function validateInput(data) {
+  const errors = [];
+  if (!data || typeof data !== "object") return ["File is not a JSON object."];
+  if (!Array.isArray(data.decisions)) errors.push('Missing "decisions" array.');
+  else {
+    const seen = new Set();
+    data.decisions.forEach((d, i) => {
+      if (!d || typeof d !== "object") return errors.push(`decisions[${i}] is not an object.`);
+      if (!d.id) errors.push(`decisions[${i}] has no "id".`);
+      if (!d.question) errors.push(`decisions[${i}] has no "question".`);
+      if (d.id && seen.has(d.id)) errors.push(`Duplicate decision id "${d.id}".`);
+      seen.add(d.id);
+      if (d.options !== undefined && !Array.isArray(d.options))
+        errors.push(`decisions[${i}].options must be an array.`);
+      validateDrivers(d.drivers, `decisions[${i}]`, errors);
+      (d.options || []).forEach((o, j) => {
+        if (typeof o === "string") return;
+        if (!o || !o.text) errors.push(`decisions[${i}].options[${j}] has no "text".`);
+        else validateDrivers(o.drivers, `decisions[${i}].options[${j}]`, errors);
+      });
+    });
+  }
+  return errors;
+}
+
+// One item per option; a decision with no options becomes one question-level item.
+function flattenItems(data) {
+  const items = [];
+  for (const d of data.decisions) {
+    const opts = d.options || [];
+    if (opts.length === 0) {
+      items.push({
+        item_id: d.id,
+        decision_id: d.id,
+        source: d.source || "",
+        category: d.category || "",
+        question: d.question,
+        option: null,
+        level: "question",
+        drivers: normalizeDrivers(d.drivers),
+      });
+    } else {
+      opts.forEach((o, j) => {
+        const text = typeof o === "string" ? o : o.text;
+        const id = typeof o === "string" || !o.id ? `${d.id}-O${j + 1}` : o.id;
+        items.push({
+          item_id: id,
+          decision_id: d.id,
+          source: d.source || "",
+          category: d.category || "",
+          question: d.question,
+          option: text,
+          level: "option",
+          drivers: normalizeDrivers([...(d.drivers || []), ...((typeof o === "object" && o.drivers) || [])]),
+        });
+      });
+    }
+  }
+  return items;
+}
+
+// ---------- prompt ----------
+
+function shuffled(arr, rng = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildUserPrompt(item, { context, definitions, labelOrder = LABELS, taxonomy = DEFAULT_TAXONOMY, includeDrivers = true }) {
+  const defs = labelOrder.map((l) => `- ${l}: ${definitions[l]}`).join("\n");
+  let subject =
+    item.option == null
+      ? `Design decision (question): ${item.question}`
+      : `Design decision (question): ${item.question}\nOption being classified: ${item.option}`;
+  if (includeDrivers && item.drivers?.length)
+    subject += `\nDecision drivers recorded for this option (quality attributes it affects; ++ strongly supports, + supports, N neutral, - hurts, -- strongly hurts): ${item.drivers.map(driverText).join(", ")}`;
+  const types = labelOrder
+    .filter((l) => l !== "None" && taxonomy[l])
+    .map((l) => `${l}:\n${taxonomy[l].map((c) => `  ${c.id} ${c.name} (${c.hint || ""})`).join("\n")}`)
+    .join("\n");
+  return [
+    `Context: ${context}`,
+    "",
+    "Labels (choose exactly one):",
+    defs,
+    "",
+    "Bias types (ISO/IEC TR 24027 clause) under each label:",
+    types,
+    "",
+    subject,
+    "",
+    "If this option were adopted, what is the PRIMARY source of potential unwanted bias it could introduce or must manage, and which bias type under that source fits best? If it has no plausible fairness relevance, choose None and set clause to null.",
+    `Respond with JSON only, exactly in this form: {"label": "<one of ${labelOrder.join(" | ")}>", "clause": "<clause id from the list under your label, or null>"}`,
+  ].join("\n");
+}
+
+// ---------- parsing ----------
+
+const SYNONYMS = [
+  [/human[\s_-]*cognitive|cognitive/i, "Cognitive"],
+  [/engineering/i, "Engineering"],
+  [/\bdata\b/i, "Data"],
+  [/\bnone\b|not[\s_-]*relevant|no[\s_-]*bias/i, "None"],
+];
+
+function normalizeLabel(s) {
+  if (s == null) return null;
+  const t = String(s).trim();
+  for (const l of LABELS) if (t.toLowerCase() === l.toLowerCase()) return l;
+  for (const [re, l] of SYNONYMS) if (re.test(t)) return l;
+  return null;
+}
+
+function parseLabel(text) {
+  if (!text) return null;
+  const m = String(text).match(/\{[\s\S]*?\}/);
+  if (m) {
+    try {
+      const obj = JSON.parse(m[0]);
+      const v = normalizeLabel(obj.label ?? obj.Label ?? obj.answer);
+      if (v) return v;
+    } catch (_) {
+      /* fall through */
+    }
+    const lm = m[0].match(/"label"\s*:\s*"([^"]+)"/i);
+    if (lm) {
+      const v = normalizeLabel(lm[1]);
+      if (v) return v;
+    }
+  }
+  // Fallback: exactly one label word mentioned
+  const found = LABELS.filter((l) => new RegExp(`\\b${l}\\b`, "i").test(text));
+  return found.length === 1 ? found[0] : null;
+}
+
+// Returns { label, clause }. The clause must belong to the chosen label; otherwise it is dropped.
+function parseResponse(text, taxonomy = DEFAULT_TAXONOMY) {
+  const label = parseLabel(text);
+  if (!label || label === "None") return { label, clause: null };
+  const list = taxonomy[label] || [];
+  let raw = null;
+  const m = String(text).match(/\{[\s\S]*?\}/);
+  if (m) {
+    try {
+      const obj = JSON.parse(m[0]);
+      raw = obj.clause ?? obj.Clause ?? obj.subtype ?? obj.bias_type ?? null;
+    } catch (_) {
+      const cm = m[0].match(/"clause"\s*:\s*"([^"]+)"/i);
+      raw = cm ? cm[1] : null;
+    }
+  }
+  if (raw == null) return { label, clause: null };
+  const t = String(raw).trim().toLowerCase();
+  const byId = list.find((c) => t === c.id.toLowerCase() || t.startsWith(`${c.id.toLowerCase()} `));
+  if (byId) return { label, clause: byId.id };
+  const byName = list.find((c) => t.includes(c.name.toLowerCase()));
+  return { label, clause: byName ? byName.id : null };
+}
+
+// ---------- self-consistency ----------
+
+function entropy(counts, total) {
+  if (!total) return null;
+  let h = 0;
+  for (const c of Object.values(counts)) if (c > 0) h -= (c / total) * Math.log2(c / total);
+  return h / Math.log2(LABELS.length); // normalised 0..1
+}
+
+// labels: array of label strings or null (failed parse/call) for one item × one model
+function selfConsistency(labels) {
+  const counts = Object.fromEntries(LABELS.map((l) => [l, 0]));
+  let valid = 0;
+  for (const l of labels) if (l && counts[l] !== undefined) (counts[l]++, valid++);
+  const max = Math.max(...Object.values(counts));
+  const top = LABELS.filter((l) => counts[l] === max && max > 0);
+  const tie = top.length > 1;
+  return {
+    runs: labels.length,
+    valid,
+    failed: labels.length - valid,
+    counts,
+    majority: valid && !tie ? top[0] : null,
+    tie,
+    confidence: valid ? max / valid : null,
+    entropy: entropy(counts, valid),
+  };
+}
+
+// Majority clause among the runs that returned the given label.
+function clauseVote(labels, clauses, label) {
+  const counts = {};
+  let n = 0;
+  labels.forEach((l, i) => {
+    if (l === label && clauses?.[i]) (counts[clauses[i]] = (counts[clauses[i]] || 0) + 1), n++;
+  });
+  const max = Math.max(0, ...Object.values(counts));
+  const top = Object.keys(counts).filter((k) => counts[k] === max && max > 0);
+  return { counts, n, clause: top.length === 1 ? top[0] : null, share: n ? max / n : null };
+}
+
+// raw: { [modelKey]: { [item_id]: [label|null, ...] } }; clauses: same shape with clause ids (optional)
+function aggregate(items, modelKeys, raw, threshold, clauses = {}) {
+  return items.map((it) => {
+    const per = {};
+    for (const mk of modelKeys) {
+      const labels = (raw[mk] && raw[mk][it.item_id]) || [];
+      const sc = selfConsistency(labels);
+      const cv = sc.majority && sc.majority !== "None" ? clauseVote(labels, clauses?.[mk]?.[it.item_id], sc.majority) : null;
+      per[mk] = { ...sc, clause: cv?.clause ?? null, clause_share: cv?.share ?? null, clause_counts: cv?.counts ?? {} };
+    }
+    const confident = modelKeys
+      .map((mk) => per[mk])
+      .filter((r) => r.majority && r.confidence >= threshold)
+      .map((r) => r.majority);
+    const tally = {};
+    for (const l of confident) tally[l] = (tally[l] || 0) + 1;
+    let best = null,
+      bestN = 0;
+    for (const [l, n] of Object.entries(tally)) if (n > bestN) (best = l), (bestN = n);
+    const nModels = modelKeys.length;
+    let status, final;
+    if (bestN === nModels && nModels > 0) (status = "Accepted (full agreement)"), (final = best);
+    else if (bestN >= 2 && bestN > nModels / 2) (status = "Accepted (majority)"), (final = best);
+    else if (nModels === 1 && bestN === 1) (status = "Accepted (single model)"), (final = best);
+    else (status = "Contested"), (final = null);
+    // Final clause: pool the clause votes of the models that support the final label.
+    let final_clause = null, clause_share = null;
+    if (final && final !== "None") {
+      const pooled = {};
+      for (const mk of modelKeys) {
+        const p = per[mk];
+        if (p.majority === final && p.confidence >= threshold) for (const [c, n] of Object.entries(p.clause_counts)) pooled[c] = (pooled[c] || 0) + n;
+      }
+      const tot = Object.values(pooled).reduce((a, b) => a + b, 0);
+      const max = Math.max(0, ...Object.values(pooled));
+      const top = Object.keys(pooled).filter((c) => pooled[c] === max && max > 0);
+      if (top.length === 1) (final_clause = top[0]), (clause_share = max / tot);
+    }
+    return { ...it, per, final_label: final, final_clause, clause_share, agreement: `${bestN}/${nModels}`, status };
+  });
+}
+
+// Decision drivers against final bias source: how often each driver appears on items with each final label.
+function driverCrosstab(rows) {
+  const by = new Map();
+  for (const r of rows) {
+    for (const d of r.drivers || []) {
+      const k = d.name;
+      if (!by.has(k)) by.set(k, { name: k, total: 0, counts: Object.fromEntries([...LABELS, "Contested"].map((l) => [l, 0])), effects: {} });
+      const e = by.get(k);
+      e.total++;
+      e.counts[r.final_label || "Contested"]++;
+      if (d.effect) e.effects[d.effect] = (e.effects[d.effect] || 0) + 1;
+    }
+  }
+  return [...by.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+}
+
+// One row per bias type: which items (final label + final clause) address it. Rows with no items are gaps.
+function clauseChecklist(rows, taxonomy = DEFAULT_TAXONOMY) {
+  const out = [];
+  for (const src of ["Cognitive", "Data", "Engineering"]) {
+    for (const c of taxonomy[src] || []) {
+      const its = rows.filter((r) => r.final_label === src && r.final_clause === c.id);
+      out.push({ source: src, ...c, items: its.map((r) => r.item_id), count: its.length });
+    }
+    const unspecified = rows.filter((r) => r.final_label === src && !r.final_clause);
+    if (unspecified.length) out.push({ source: src, id: "", name: "No agreed bias type", hint: "", items: unspecified.map((r) => r.item_id), count: unspecified.length, unspecified: true });
+  }
+  return out;
+}
+
+// ---------- agreement metrics ----------
+
+function cohenKappa(a, b, cats) {
+  const pairs = a.map((x, i) => [x, b[i]]).filter(([x, y]) => x != null && y != null);
+  const n = pairs.length;
+  if (!n) return { kappa: null, n: 0, po: null, pe: null };
+  const po = pairs.filter(([x, y]) => x === y).length / n;
+  let pe = 0;
+  for (const c of cats) {
+    const pa = pairs.filter(([x]) => x === c).length / n;
+    const pb = pairs.filter(([, y]) => y === c).length / n;
+    pe += pa * pb;
+  }
+  const kappa = 1 - pe === 0 ? (po === 1 ? 1 : null) : (po - pe) / (1 - pe);
+  return { kappa, n, po, pe };
+}
+
+// rows: array of arrays, each inner array = labels from all raters for one item (no nulls)
+function fleissKappa(rows, cats) {
+  const use = rows.filter((r) => r.length >= 2 && r.every((x) => x != null));
+  const N = use.length;
+  if (!N) return { kappa: null, n: 0, pbar: null, pe: null };
+  const m = use[0].length;
+  const table = use.map((r) => cats.map((c) => r.filter((x) => x === c).length));
+  const Pi = table.map((row) => (row.reduce((s, x) => s + x * x, 0) - m) / (m * (m - 1)));
+  const pbar = Pi.reduce((s, x) => s + x, 0) / N;
+  const pj = cats.map((_, j) => table.reduce((s, row) => s + row[j], 0) / (N * m));
+  const pe = pj.reduce((s, x) => s + x * x, 0);
+  const kappa = 1 - pe === 0 ? (pbar === 1 ? 1 : null) : (pbar - pe) / (1 - pe);
+  return { kappa, n: N, pbar, pe };
+}
+
+function landisKoch(k) {
+  if (k == null || Number.isNaN(k)) return "undefined";
+  if (k < 0) return "poor";
+  if (k <= 0.2) return "slight";
+  if (k <= 0.4) return "fair";
+  if (k <= 0.6) return "moderate";
+  if (k <= 0.8) return "substantial";
+  return "almost perfect";
+}
+
+// ---------- bootstrap confidence intervals ----------
+
+// Small seeded PRNG so confidence intervals are reproducible run to run.
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function quantile(sorted, p) {
+  const h = (sorted.length - 1) * p;
+  const lo = Math.floor(h);
+  return sorted[lo] + (sorted[Math.min(lo + 1, sorted.length - 1)] - sorted[lo]) * (h - lo);
+}
+
+// Percentile bootstrap over items. statFn receives an array of resampled item indices.
+function bootstrapCI(n, statFn, { B = 2000, seed = 24027, alpha = 0.05 } = {}) {
+  if (!B || n < 2) return null;
+  const rand = mulberry32(seed);
+  const vals = [];
+  const idx = new Array(n);
+  for (let b = 0; b < B; b++) {
+    for (let i = 0; i < n; i++) idx[i] = Math.floor(rand() * n);
+    const v = statFn(idx);
+    if (v != null && Number.isFinite(v)) vals.push(v);
+  }
+  if (vals.length < B / 2) return null;
+  vals.sort((a, b) => a - b);
+  return { lo: quantile(vals, alpha / 2), hi: quantile(vals, 1 - alpha / 2), B, seed, level: 1 - alpha };
+}
+
+const toBinary = (l) => (l == null ? null : l === "None" ? "Not relevant" : "Relevant");
+
+// Views: all 4 labels; step 1 (fairness-relevant or not); step 2 (source, items every model judged relevant);
+// step 3 (TR 24027 bias type, items where every model chose the same source and gave a bias type).
+// opts.bootstrap = number of bootstrap resamples for 95% CIs (0 = skip)
+function agreementReport(rows, modelKeys, modelNames = {}, { bootstrap = 0, seed = 24027, taxonomy = null } = {}) {
+  const lab = (r, mk) => r.per[mk].majority;
+  const views = {
+    "All labels (Data / Cognitive / Engineering / None)": { cats: LABELS, get: lab, filter: () => true },
+    "Step 1: fairness-relevant vs. None": { cats: ["Relevant", "Not relevant"], get: (r, mk) => toBinary(lab(r, mk)), filter: () => true },
+    "Step 2: bias source (items all models judged relevant)": {
+      cats: SOURCE_LABELS,
+      get: lab,
+      filter: (r) => modelKeys.every((mk) => r.per[mk].majority && r.per[mk].majority !== "None"),
+    },
+  };
+  const anyClause = rows.some((r) => modelKeys.some((mk) => r.per[mk].clause));
+  if (taxonomy && anyClause) {
+    views["Step 3: TR 24027 bias type (items where all models chose the same source)"] = {
+      cats: Object.keys(clauseIndex(taxonomy)),
+      get: (r, mk) => r.per[mk].clause,
+      filter: (r) => {
+        const first = r.per[modelKeys[0]].majority;
+        return first && first !== "None" && modelKeys.every((mk) => r.per[mk].majority === first && r.per[mk].clause);
+      },
+    };
+  }
+  const out = [];
+  for (const [name, v] of Object.entries(views)) {
+    const sub = rows.filter(v.filter);
+    const pairwise = [];
+    for (let i = 0; i < modelKeys.length; i++)
+      for (let j = i + 1; j < modelKeys.length; j++) {
+        const a = sub.map((r) => v.get(r, modelKeys[i]));
+        const b = sub.map((r) => v.get(r, modelKeys[j]));
+        const res = cohenKappa(a, b, v.cats);
+        const ci = bootstrapCI(a.length, (ix) => cohenKappa(ix.map((k) => a[k]), ix.map((k) => b[k]), v.cats).kappa, { B: bootstrap, seed });
+        pairwise.push({
+          pair: `${modelNames[modelKeys[i]] || modelKeys[i]} and ${modelNames[modelKeys[j]] || modelKeys[j]}`,
+          ...res,
+          ci,
+          interpretation: landisKoch(res.kappa),
+        });
+      }
+    let fl = { kappa: null, n: 0, ci: null };
+    if (modelKeys.length >= 3) {
+      const rs = sub.map((r) => modelKeys.map((mk) => v.get(r, mk))).filter((r) => r.every((x) => x != null));
+      fl = { ...fleissKappa(rs, v.cats), ci: bootstrapCI(rs.length, (ix) => fleissKappa(ix.map((k) => rs[k]), v.cats).kappa, { B: bootstrap, seed }) };
+    }
+    out.push({ view: name, items: sub.length, fleiss: { ...fl, interpretation: landisKoch(fl.kappa) }, pairwise });
+  }
+  return out;
+}
+
+function modelSummary(rows, modelKeys, threshold) {
+  return modelKeys.map((mk) => {
+    const rs = rows.map((r) => r.per[mk]);
+    const withConf = rs.filter((r) => r.confidence != null);
+    const meanConf = withConf.length ? withConf.reduce((s, r) => s + r.confidence, 0) / withConf.length : null;
+    const runs = rs.reduce((s, r) => s + r.runs, 0);
+    const failed = rs.reduce((s, r) => s + r.failed, 0);
+    const dist = Object.fromEntries(LABELS.map((l) => [l, rs.filter((r) => r.majority === l).length]));
+    return {
+      model: mk,
+      mean_confidence: meanConf,
+      above_threshold: rs.filter((r) => r.confidence != null && r.confidence >= threshold).length,
+      ties: rs.filter((r) => r.tie).length,
+      failed_runs: failed,
+      total_runs: runs,
+      distribution: dist,
+    };
+  });
+}
+
+// ---------- export ----------
+
+function csvCell(v) {
+  if (v == null) return "";
+  const s = String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function toCSV(rows, modelKeys, modelNames = {}) {
+  const head = ["item_id", "decision_id", "source", "category", "level", "question", "option", "drivers"];
+  for (const mk of modelKeys) {
+    const n = modelNames[mk] || mk;
+    head.push(`${n}_majority`, `${n}_clause`, `${n}_confidence`, `${n}_entropy`, ...LABELS.map((l) => `${n}_n_${l}`), `${n}_failed`);
+  }
+  head.push("agreement", "final_label", "final_clause", "clause_share", "status");
+  const lines = [head.map(csvCell).join(",")];
+  for (const r of rows) {
+    const row = [r.item_id, r.decision_id, r.source, r.category, r.level, r.question, r.option, (r.drivers || []).map(driverText).join("; ")];
+    for (const mk of modelKeys) {
+      const p = r.per[mk];
+      row.push(
+        p.majority ?? (p.tie ? "TIE" : ""),
+        p.clause ?? "",
+        p.confidence == null ? "" : p.confidence.toFixed(2),
+        p.entropy == null ? "" : p.entropy.toFixed(3),
+        ...LABELS.map((l) => p.counts[l]),
+        p.failed
+      );
+    }
+    row.push(r.agreement, r.final_label ?? "", r.final_clause ?? "", r.clause_share == null ? "" : r.clause_share.toFixed(2), r.status);
+    lines.push(row.map(csvCell).join(","));
+  }
+  return lines.join("\n");
+}
+
+return { LABELS, SOURCE_LABELS, DEFAULT_DEFINITIONS, DEFAULT_SYSTEM_PROMPT, DEFAULT_CONTEXT, DEFAULT_TAXONOMY, CLAUSE_HEADINGS, clauseIndex, validateTaxonomy, DRIVER_EFFECTS, parseDriver, normalizeDrivers, driverText, validateInput, flattenItems, shuffled, buildUserPrompt, normalizeLabel, parseLabel, parseResponse, entropy, selfConsistency, aggregate, driverCrosstab, clauseChecklist, cohenKappa, fleissKappa, landisKoch, mulberry32, bootstrapCI, agreementReport, modelSummary, toCSV };
+})();
+
+// ---- transport.js ----
+const __mod_transport = (() => {
+// transport.js — how requests leave the browser: directly to the provider, or via the API proxy,
+// with or without encoding. Every request is recorded for the inspector, with API keys masked.
+
+const SECRET_HEADERS = ["x-api-key", "authorization", "x-goog-api-key"];
+
+function maskSecret(v) {
+  const s = String(v || "");
+  const bearer = s.startsWith("Bearer ") ? "Bearer " : "";
+  const k = s.slice(bearer.length);
+  if (!k) return s;
+  return `${bearer}${k.slice(0, Math.min(4, Math.floor(k.length / 4)))}…${k.slice(-4)}`;
+}
+
+function maskHeaders(h = {}) {
+  const out = {};
+  for (const [k, v] of Object.entries(h)) out[k] = SECRET_HEADERS.includes(k.toLowerCase()) ? maskSecret(v) : v;
+  return out;
+}
+
+const b64 = {
+  enc(bytes) {
+    let s = "";
+    const u = new Uint8Array(bytes);
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
+    return btoa(s);
+  },
+  dec(str) {
+    const s = atob(str);
+    const u = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return u;
+  },
+};
+
+// Encodes { url, method, headers, body } for the proxy: a one-time AES-GCM key encrypts the request,
+// and the proxy's RSA-OAEP public key encrypts that one-time key. Only the proxy can decode it.
+async function encodeRequest(spec, publicJwk) {
+  const pub = await crypto.subtle.importKey("jwk", { kty: "RSA", n: publicJwk.n, e: publicJwk.e, alg: "RSA-OAEP-256", ext: true }, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
+  const aes = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const raw = await crypto.subtle.exportKey("raw", aes);
+  const wk = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, pub, raw);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(JSON.stringify(spec)));
+  return { envelope: { enc: "v1", kid: publicJwk.kid || null, wk: b64.enc(wk), iv: b64.enc(iv), ct: b64.enc(ct) }, aes };
+}
+
+async function decodeResponse(envelope, aes) {
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64.dec(envelope.iv) }, aes, b64.dec(envelope.ct));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+const short = (s, n = 160) => (s.length > n ? `${s.slice(0, n)}… (${s.length.toLocaleString()} characters)` : s);
+
+// A small response object with the parts the providers module uses.
+const responseLike = (status, headers, text) => ({ status, ok: status >= 200 && status < 300, headers: { get: (h) => headers[h.toLowerCase()] ?? null }, text: async () => text });
+
+/**
+ * options: { route: "direct" | "proxy", proxyUrl, encode, onRecord(record), keepBodies }
+ * returns { request(url, init, signal), record(entry), describe() }
+ */
+function createTransport({ route = "direct", proxyUrl = "", encode = false, onRecord = () => {} } = {}) {
+  const base = String(proxyUrl || "").trim().replace(/\/+$/, "");
+  let publicJwk = null;
+  let seq = 0;
+
+  async function proxyKey(signal) {
+    if (publicJwk) return publicJwk;
+    const r = await fetch(`${base}/key`, { signal });
+    if (!r.ok) throw new Error(`The proxy has no key for encoding (HTTP ${r.status}). Turn encoding off or set up the proxy key.`);
+    publicJwk = await r.json();
+    return publicJwk;
+  }
+
+  function parseBody(init) {
+    try {
+      return init.body ? JSON.parse(init.body) : null;
+    } catch (_) {
+      return init.body || null;
+    }
+  }
+
+  async function request(url, init = {}, signal) {
+    const t0 = performance.now();
+    const method = (init.method || "GET").toUpperCase();
+    const headers = init.headers || {};
+    const body = parseBody(init);
+    const rec = {
+      id: ++seq,
+      at: new Date().toISOString(),
+      route: route === "proxy" ? (encode ? "Via proxy, encoded" : "Via proxy, not encoded") : "Direct",
+      target: url,
+      method,
+      model: body?.model || (url.match(/models\/([^:/?]+)/) || [])[1] || null,
+      decoded: { url, method, headers: maskHeaders(headers), body },
+      sent: null,
+      status: null,
+      response: null,
+      responseSent: null,
+      ms: 0,
+      error: null,
+    };
+    try {
+      let res;
+      if (route !== "proxy") {
+        rec.sent = { url, method, headers: maskHeaders(headers), body };
+        const r = await fetch(url, { ...init, signal });
+        const text = await r.text();
+        res = responseLike(r.status, { "retry-after": r.headers.get("retry-after"), "content-type": r.headers.get("content-type") }, text);
+        rec.responseSent = short(text, 400);
+      } else {
+        if (!base) throw new Error("Enter the API proxy address in step 2.");
+        const spec = { url, method, headers, body: init.body };
+        if (encode) {
+          const key = await proxyKey(signal);
+          const { envelope, aes } = await encodeRequest(spec, key);
+          rec.sent = { url: `${base}/forward`, method: "POST", headers: { "content-type": "application/json" }, body: { enc: envelope.enc, kid: envelope.kid, wk: short(envelope.wk, 48), iv: envelope.iv, ct: short(envelope.ct, 64) } };
+          const r = await fetch(`${base}/forward`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(envelope), signal });
+          const text = await r.text();
+          let parsed = null;
+          try {
+            parsed = JSON.parse(text);
+          } catch (_) { /* not JSON */ }
+          if (r.ok && parsed?.enc === "v1") {
+            rec.responseSent = JSON.stringify({ enc: "v1", iv: parsed.iv, ct: short(parsed.ct, 64) });
+            const out = await decodeResponse(parsed, aes);
+            res = responseLike(out.status, out.headers || {}, out.body);
+          } else {
+            // Proxy-level error (not encoded; contains no secrets)
+            if (r.status === 409) publicJwk = null;
+            rec.responseSent = short(text, 400);
+            res = responseLike(r.status, { "retry-after": r.headers.get("retry-after") }, text);
+          }
+        } else {
+          rec.sent = { url: `${base}/forward`, method: "POST", headers: { "content-type": "application/json" }, body: { ...spec, headers: maskHeaders(headers), body } };
+          const r = await fetch(`${base}/forward`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(spec), signal });
+          const text = await r.text();
+          rec.responseSent = short(text, 400);
+          res = responseLike(r.status, { "retry-after": r.headers.get("retry-after") }, text);
+        }
+      }
+      rec.status = res.status;
+      rec.response = short(await res.text(), 2000);
+      return res;
+    } catch (e) {
+      rec.error = e.name === "AbortError" ? "Cancelled" : e.message;
+      throw e;
+    } finally {
+      rec.ms = Math.round(performance.now() - t0);
+      onRecord(rec);
+    }
+  }
+
+  // Simulated models do not leave the browser; they are still recorded so the inspector can be tried.
+  function record({ model, user, system, text }) {
+    onRecord({
+      id: ++seq, at: new Date().toISOString(), route: "Simulated (stays in the browser)", target: `simulated://${model}`, method: "POST", model,
+      decoded: { url: `simulated://${model}`, method: "POST", headers: {}, body: { model, system, user } },
+      sent: null, status: 200, response: text, responseSent: null, ms: 0, error: null,
+    });
+  }
+
+  async function checkProxy(signal) {
+    if (!base) throw new Error("Enter the API proxy address first.");
+    const r = await fetch(`${base}/health`, { signal });
+    if (!r.ok) throw new Error(`The proxy answered HTTP ${r.status}.`);
+    return r.json();
+  }
+
+  return { request, record, checkProxy, describe: () => ({ route, proxyUrl: base, encode: route === "proxy" && encode }) };
+}
+
+const directTransport = createTransport();
+
+return { maskSecret, maskHeaders, encodeRequest, decodeResponse, createTransport, directTransport };
+})();
+
+// ---- providers.js ----
+const __mod_providers = (() => {
+// providers.js — builds each provider's request and reads its answer. How the request travels
+// (directly, or via the API proxy, encoded or not) is decided by the transport (transport.js).
+
+const { directTransport } = __mod_transport;
+
+class ProviderError extends Error {
+  constructor(message, { status = 0, retryable = false, fatal = false, retryAfterMs = null } = {}) {
+    super(message);
+    this.status = status;
+    this.retryable = retryable; // try again later (rate limit, overload, network)
+    this.fatal = fatal; // stop this model entirely (bad key, unknown model)
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+async function httpJSON(url, init, signal, transport = directTransport) {
+  let res;
+  try {
+    res = await transport.request(url, init, signal);
+  } catch (e) {
+    if (e.name === "AbortError") throw e;
+    throw new ProviderError(`Network error: ${e.message}`, { retryable: true });
+  }
+  const text = await res.text();
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch (_) {
+    body = null;
+  }
+  if (!res.ok) {
+    const msg =
+      (body && (body.error?.message || body.error?.status || body.message)) || text.slice(0, 300) || res.statusText;
+    const ra = Number(res.headers.get("retry-after"));
+    throw new ProviderError(`HTTP ${res.status}: ${msg}`, {
+      status: res.status,
+      retryable: res.status === 408 || res.status === 409 || res.status === 429 || res.status >= 500,
+      // Gemini reports an invalid key as HTTP 400 ("API key not valid"), so match the message too.
+      fatal: res.status === 401 || res.status === 403 || res.status === 404 || /api[ _]key[ _]not[ _]valid|API_KEY_INVALID/i.test(msg),
+      retryAfterMs: Number.isFinite(ra) && ra > 0 ? ra * 1000 : null,
+    });
+  }
+  return body;
+}
+
+const mentionsTemperature = (e) => e instanceof ProviderError && e.status === 400 && /temperature/i.test(e.message);
+
+// ---------------- Anthropic (Claude) ----------------
+const anthropic = {
+  id: "anthropic",
+  name: "Claude (Anthropic)",
+  defaultModel: "claude-sonnet-5-5",
+  keyHelp: "https://console.anthropic.com/settings/keys",
+  headers(key) {
+    return {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      // Required by Anthropic for calls made directly from a browser page.
+      "anthropic-dangerous-direct-browser-access": "true",
+    };
+  },
+  buildRequest({ key, model, system, user, temperature }) {
+    const body = { model, max_tokens: 200, system, messages: [{ role: "user", content: user }] };
+    if (temperature != null) body.temperature = temperature;
+    return { url: "https://api.anthropic.com/v1/messages", init: { method: "POST", headers: this.headers(key), body: JSON.stringify(body) } };
+  },
+  extract(body) {
+    return (body?.content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n");
+  },
+  async listModels(key, signal, _baseUrl, transport) {
+    const b = await httpJSON("https://api.anthropic.com/v1/models?limit=100", { headers: this.headers(key) }, signal, transport);
+    return (b?.data || []).map((m) => m.id);
+  },
+};
+
+// ---------------- OpenAI (GPT) ----------------
+const openai = {
+  id: "openai",
+  name: "GPT (OpenAI)",
+  defaultModel: "gpt-5-mini",
+  keyHelp: "https://platform.openai.com/api-keys",
+  buildRequest({ key, model, system, user, temperature }) {
+    const body = {
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_object" },
+    };
+    if (temperature != null) body.temperature = temperature;
+    return {
+      url: "https://api.openai.com/v1/chat/completions",
+      init: { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${key}` }, body: JSON.stringify(body) },
+    };
+  },
+  extract(body) {
+    return body?.choices?.[0]?.message?.content || "";
+  },
+  async listModels(key, signal, _baseUrl, transport) {
+    const b = await httpJSON("https://api.openai.com/v1/models", { headers: { authorization: `Bearer ${key}` } }, signal, transport);
+    return (b?.data || [])
+      .map((m) => m.id)
+      .filter((id) => /^(gpt|o\d|chatgpt)/i.test(id) && !/audio|realtime|tts|transcribe|image|search|embedding/i.test(id))
+      .sort();
+  },
+};
+
+// ---------------- Any OpenAI-compatible service ----------------
+// For services that offer the OpenAI chat-completions interface (e.g. OpenRouter, DeepSeek, Groq,
+// Together, Mistral, a local Ollama or LM Studio server). The base URL is entered by the user.
+// Whether a service accepts calls from a browser (CORS) depends on that service.
+const compatible = {
+  id: "compatible",
+  name: "OpenAI-compatible (custom URL)",
+  defaultModel: "",
+  keyHelp: null,
+  needsBaseUrl: true,
+  optionalKey: true,
+  base(baseUrl) {
+    return String(baseUrl || "").trim().replace(/\/+$/, "").replace(/\/chat\/completions$/, "");
+  },
+  buildRequest({ key, model, system, user, temperature, baseUrl, jsonMode = true }) {
+    const body = { model, messages: [{ role: "system", content: system }, { role: "user", content: user }] };
+    if (jsonMode) body.response_format = { type: "json_object" };
+    if (temperature != null) body.temperature = temperature;
+    const headers = { "content-type": "application/json" };
+    if (key) headers.authorization = `Bearer ${key}`;
+    return { url: `${this.base(baseUrl)}/chat/completions`, init: { method: "POST", headers, body: JSON.stringify(body) } };
+  },
+  extract(body) {
+    return body?.choices?.[0]?.message?.content || "";
+  },
+  async listModels(key, signal, baseUrl, transport) {
+    const headers = key ? { authorization: `Bearer ${key}` } : {};
+    const b = await httpJSON(`${this.base(baseUrl)}/models`, { headers }, signal, transport);
+    return (b?.data || b?.models || []).map((m) => m.id || m.name).filter(Boolean).sort();
+  },
+};
+
+// ---------------- Google (Gemini) ----------------
+const gemini = {
+  id: "gemini",
+  name: "Gemini (Google)",
+  defaultModel: "gemini-2.5-flash",
+  keyHelp: "https://aistudio.google.com/apikey",
+  buildRequest({ key, model, system, user, temperature }) {
+    const generationConfig = { responseMimeType: "application/json" };
+    if (temperature != null) generationConfig.temperature = temperature;
+    const body = {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig,
+    };
+    const m = encodeURIComponent(model.replace(/^models\//, ""));
+    return {
+      url: `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+      init: { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(body) },
+    };
+  },
+  extract(body) {
+    const parts = body?.candidates?.[0]?.content?.parts || [];
+    return parts.filter((p) => !p.thought).map((p) => p.text || "").join("\n");
+  },
+  async listModels(key, signal, _baseUrl, transport) {
+    const b = await httpJSON(
+      "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
+      { headers: { "x-goog-api-key": key } },
+      signal,
+      transport
+    );
+    return (b?.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m) => m.name.replace(/^models\//, ""))
+      .filter((id) => /gemini/i.test(id))
+      .sort();
+  },
+};
+
+// ---------------- Simulated provider (demo only) ----------------
+// Lets people try the interface without a key. Answers are generated by keyword rules plus noise,
+// so results are NOT research data.
+function hash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) (h ^= s.charCodeAt(i)), (h = Math.imul(h, 16777619));
+  return h >>> 0;
+}
+function rng(seed) {
+  let x = seed || 1;
+  return () => ((x = (Math.imul(x ^ (x >>> 15), 2246822507) + 0x9e3779b9) >>> 0), (x % 100000) / 100000);
+}
+const demo = {
+  id: "demo",
+  name: "Simulated (demo, no key)",
+  defaultModel: "sim-a",
+  keyHelp: null,
+  noKey: true,
+  simulate({ model, user, runIndex }) {
+    const subject = (user.match(/Option being classified: (.*)/) || user.match(/Design decision \(question\): (.*)/) || [, ""])[1];
+    const t = subject.toLowerCase();
+    let base = "None";
+    if (/data|training|label|listing|target/.test(t)) base = "Data";
+    else if (/human|team|oversight|guideline|value|education|personnel|consensus|cultur|parent/.test(t)) base = "Cognitive";
+    else if (/ai|algorithm|filter|avatar|verification|biometric|fingerprint|assistive|multilingual|locali|interaction|gamif|3d|age|crypto|nft|infrastructure|automat/.test(t)) base = "Engineering";
+    const labels = ["Data", "Cognitive", "Engineering", "None"];
+    // Each simulated model consistently "disagrees" on some items (model-level opinion) ...
+    const opinion = { "sim-a": 0.05, "sim-b": 0.12, "sim-c": 0.2 }[model] ?? 0.1;
+    if (rng(hash(`${model}|${subject}|opinion`))() < opinion) base = labels[hash(`${model}${subject}`) % 4];
+    // ... and is noisy from run to run (self-consistency below 1).
+    const r = rng(hash(`${model}|${subject}|${runIndex}`))();
+    const noise = { "sim-a": 0.1, "sim-b": 0.18, "sim-c": 0.28 }[model] ?? 0.2;
+    const label = r < noise ? labels[hash(`${model}${subject}${runIndex}x`) % 4] : base;
+    if (label === "None") return JSON.stringify({ label, clause: null });
+    // pick a bias type listed under the chosen label in the prompt (stable per item, some run-to-run noise)
+    const block = (user.match(new RegExp(`\\n${label}:\\n((?:  .*\\n?)+)`)) || [, ""])[1];
+    const ids = [...block.matchAll(/^\s+(\d+(?:\.\d+)+)/gm)].map((x) => x[1]);
+    const own = rng(hash(`${model}|${subject}|copinion`))() < opinion * 1.5 ? hash(`${model}${subject}`) : hash(subject); // models sometimes differ
+    const pick = rng(hash(`${model}|${subject}|${runIndex}|c`))() < noise ? hash(`${subject}${runIndex}`) : own;
+    return JSON.stringify({ label, clause: ids.length ? ids[pick % ids.length] : null });
+  },
+  async listModels() {
+    return ["sim-a", "sim-b", "sim-c"];
+  },
+};
+
+const PROVIDERS = { anthropic, openai, gemini, compatible, demo };
+
+// Calls one provider once. Handles "temperature not supported" by retrying once without it.
+// state: per-model object that remembers whether temperature must be dropped.
+async function callModel({ providerId, key, model, system, user, temperature, signal, state = {}, runIndex = 0, baseUrl = "", transport = directTransport }) {
+  const p = PROVIDERS[providerId];
+  if (!p) throw new ProviderError(`Unknown provider ${providerId}`, { fatal: true });
+  if (p.simulate) {
+    await new Promise((r) => setTimeout(r, 15 + (hash(user + runIndex) % 60)));
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    const text = p.simulate({ model, user, runIndex });
+    transport.record?.({ model, user, system, text });
+    return { text, usedTemperature: temperature };
+  }
+  // Retry once without an option the model rejects: a custom temperature, or JSON mode on some compatible services.
+  for (let attempt = 0; ; attempt++) {
+    const temp = state.dropTemperature ? null : temperature;
+    const req = p.buildRequest({ key, model, system, user, temperature: temp, baseUrl, jsonMode: !state.dropJsonMode });
+    try {
+      const body = await httpJSON(req.url, req.init, signal, transport);
+      return { text: p.extract(body), usedTemperature: temp };
+    } catch (e) {
+      if (attempt < 2 && temp != null && mentionsTemperature(e)) { state.dropTemperature = true; continue; }
+      if (attempt < 2 && !state.dropJsonMode && e instanceof ProviderError && e.status === 400 && /response_format|json_object|json mode/i.test(e.message)) { state.dropJsonMode = true; continue; }
+      throw e;
+    }
+  }
+}
+
+return { ProviderError, PROVIDERS, callModel };
+})();
+
+// ---- runner.js ----
+const __mod_runner = (() => {
+// runner.js — runs N self-consistency samples per item for each model, in parallel across models,
+// with per-model concurrency, optional requests-per-minute limit, retries and cancellation.
+
+const { callModel, ProviderError } = __mod_providers;
+const { buildUserPrompt, parseResponse, shuffled, LABELS, DEFAULT_TAXONOMY } = __mod_core;
+
+const sleep = (ms, signal) =>
+  new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => (clearTimeout(t), reject(new DOMException("Aborted", "AbortError"))), { once: true });
+  });
+
+function makeLimiter(rpm) {
+  if (!rpm || rpm <= 0) return async () => {};
+  const gap = 60000 / rpm;
+  let next = 0;
+  return async (signal) => {
+    const now = Date.now();
+    const wait = Math.max(0, next - now);
+    next = Math.max(now, next) + gap;
+    if (wait) await sleep(wait, signal);
+  };
+}
+
+/**
+ * models: [{ key, providerId, model, apiKey, baseUrl, label }]
+ * settings: { runs, temperature, shuffleLabels, concurrency, rpm, maxRetries, context, definitions, systemPrompt }
+ * resume: optional previous { raw, clauses, log } to continue an interrupted run
+ * returns { raw: {modelKey: {item_id: [label|null,...]}}, clauses: same shape with clause ids, log: [...], modelErrors }
+ */
+async function runClassification({ items, models, settings, onProgress = () => {}, signal, resume, transport }) {
+  const raw = resume?.raw ? structuredClone(resume.raw) : {};
+  const clauses = resume?.clauses ? structuredClone(resume.clauses) : {};
+  const taxonomy = settings.taxonomy || DEFAULT_TAXONOMY;
+  const log = resume?.log ? resume.log.slice() : [];
+  const modelErrors = {};
+  const total = items.length * models.length * settings.runs;
+  let done = 0;
+  for (const m of models) {
+    raw[m.key] = raw[m.key] || {};
+    clauses[m.key] = clauses[m.key] || {};
+    for (const it of items) {
+      raw[m.key][it.item_id] = raw[m.key][it.item_id] || [];
+      // keep clause arrays aligned with label arrays (older runs had no clauses)
+      const cl = (clauses[m.key][it.item_id] = clauses[m.key][it.item_id] || []);
+      while (cl.length < raw[m.key][it.item_id].length) cl.push(null);
+      done += raw[m.key][it.item_id].length;
+    }
+  }
+  // raw/log/modelErrors are live references so the caller can autosave or show partial results.
+  const progress = (extra = {}) => onProgress({ done, total, raw, clauses, log, modelErrors, ...extra });
+  progress();
+
+  await Promise.all(
+    models.map(async (m) => {
+      const limiter = makeLimiter(settings.rpm);
+      const state = {};
+      const jobs = [];
+      for (const it of items) {
+        const have = raw[m.key][it.item_id].length;
+        for (let r = have; r < settings.runs; r++) jobs.push({ it, r });
+      }
+      let idx = 0;
+      let stopped = false;
+      const worker = async () => {
+        while (!stopped && idx < jobs.length) {
+          if (signal?.aborted) return;
+          const { it, r } = jobs[idx++];
+          const order = settings.shuffleLabels ? shuffled(LABELS) : LABELS;
+          const user = buildUserPrompt(it, { context: settings.context, definitions: settings.definitions, labelOrder: order, taxonomy, includeDrivers: settings.includeDrivers !== false });
+          const entry = { model: m.key, item_id: it.item_id, run: r + 1, label_order: order.join("|"), label: null, clause: null, text: null, error: null, ms: 0, temperature: null, at: new Date().toISOString() };
+          const t0 = performance.now();
+          let attempt = 0;
+          for (;;) {
+            try {
+              await limiter(signal);
+              const out = await callModel({
+                providerId: m.providerId, key: m.apiKey, model: m.model, system: settings.systemPrompt,
+                user, temperature: settings.temperature, signal, state, runIndex: r, baseUrl: m.baseUrl, transport,
+              });
+              entry.text = out.text;
+              entry.temperature = out.usedTemperature;
+              const parsed = parseResponse(out.text, taxonomy);
+              entry.label = parsed.label;
+              entry.clause = parsed.clause;
+              if (!entry.label) entry.error = "Could not parse a label from the response";
+              break;
+            } catch (e) {
+              if (e.name === "AbortError") return;
+              const pe = e instanceof ProviderError ? e : new ProviderError(String(e.message || e));
+              if (pe.fatal) {
+                stopped = true;
+                modelErrors[m.key] = pe.message;
+                progress({ error: { model: m.key, message: pe.message, fatal: true } });
+                return;
+              }
+              if (pe.retryable && attempt < settings.maxRetries) {
+                const backoff = pe.retryAfterMs ?? Math.min(30000, 1000 * 2 ** attempt) * (0.75 + Math.random() / 2);
+                attempt++;
+                progress({ retry: { model: m.key, message: pe.message, waitMs: Math.round(backoff) } });
+                try { await sleep(backoff, signal); } catch (_) { return; }
+                continue;
+              }
+              entry.error = pe.message;
+              break;
+            }
+          }
+          entry.ms = Math.round(performance.now() - t0);
+          raw[m.key][it.item_id].push(entry.label);
+          clauses[m.key][it.item_id].push(entry.clause);
+          log.push(entry);
+          done++;
+          progress({ last: entry });
+        }
+      };
+      await Promise.all(Array.from({ length: Math.max(1, settings.concurrency) }, worker));
+    })
+  );
+  return { raw, clauses, log, modelErrors, cancelled: !!signal?.aborted };
+}
+
+return { runClassification };
+})();
+
+// ---- report.js ----
+const __mod_report = (() => {
+// report.js — turns a result object into the results page, written like the results section of a paper.
+// The same renderer produces the live dashboard and the downloadable HTML report, so they are identical.
+
+const {
+  LABELS, SOURCE_LABELS, aggregate, agreementReport, modelSummary, buildUserPrompt,
+  DEFAULT_TAXONOMY, CLAUSE_HEADINGS, clauseIndex, clauseChecklist, driverCrosstab, driverText,
+} = __mod_core;
+
+const TOOL = { name: "TR 24027 Fairness Classifier", version: "1.5.0" };
+const BOOTSTRAP = { B: 2000, seed: 24027 };
+
+const esc = (s) =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct = (x) => (x == null ? "n/a" : `${Math.round(x * 100)}%`);
+const fixed = (x, d = 2) => (x == null || Number.isNaN(x) ? "n/a" : x.toFixed(d));
+// APA style: no leading zero for statistics that cannot exceed 1 (kappa, proportions); true minus sign.
+const apa = (x, d = 2) => (x == null || Number.isNaN(x) ? "n/a" : x.toFixed(d).replace(/^(-?)0\./, "$1.").replace(/^-/, "−"));
+const ciText = (ci) => (ci ? `[${apa(ci.lo)}, ${apa(ci.hi)}]` : "");
+const labelClass = (l) => `lab-${String(l || "none").toLowerCase()}`;
+const plural = (n, w, p = `${w}s`) => `${n} ${n === 1 ? w : p}`;
+const listJoin = (a) => (a.length <= 1 ? a.join("") : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(", ")}, and ${a.at(-1)}`);
+
+// Short name (Claude, GPT, Gemini) in text and tables; exact model IDs appear in the Methods table.
+function modelDisplayName(m) {
+  return m.short || m.label || m.key;
+}
+
+function computeResults(result, { bootstrap = true } = {}) {
+  const keys = result.models.map((m) => m.key);
+  const names = Object.fromEntries(result.models.map((m) => [m.key, modelDisplayName(m)]));
+  const th = result.settings.threshold;
+  const taxonomy = result.settings.taxonomy || DEFAULT_TAXONOMY;
+  const rows = aggregate(result.items, keys, result.raw || {}, th, result.clauses || {});
+  const agreement = agreementReport(rows, keys, names, { bootstrap: bootstrap ? BOOTSTRAP.B : 0, seed: BOOTSTRAP.seed, taxonomy });
+  const checklist = clauseChecklist(rows, taxonomy);
+  const clauses = clauseIndex(taxonomy);
+  const summaries = modelSummary(rows, keys, th);
+  const total = result.items.length * keys.length * result.settings.runs;
+  const done = keys.reduce((s, k) => s + result.items.reduce((t, it) => t + ((result.raw?.[k]?.[it.item_id] || []).length), 0), 0);
+  const failed = summaries.reduce((s, x) => s + x.failed_runs, 0);
+  return { keys, names, rows, agreement, summaries, total, done, failed, threshold: th, bootstrap, taxonomy, checklist, clauses };
+}
+
+// ---------- figures (HTML/CSS marks: crisp text, responsive, hover tips) ----------
+
+function stackedBars(groups, labels = LABELS) {
+  const legend = `<div class="legend" aria-hidden="true">${labels
+    .map((l) => `<span class="legend-item"><i class="sw ${labelClass(l)}"></i>${esc(l)}</span>`)
+    .join("")}</div>`;
+  const bars = groups
+    .map((g) => {
+      const n = labels.reduce((s, l) => s + (g.counts[l] || 0), 0);
+      const denom = g.total ?? n;
+      const segs = labels
+        .filter((l) => g.counts[l])
+        .map((l) => {
+          const c = g.counts[l];
+          const share = denom ? c / denom : 0;
+          const tip = `${g.name}, ${l}: ${c} of ${denom} (${pct(share)})`;
+          return `<div class="seg ${labelClass(l)}" style="flex-grow:${c}" data-tip="${esc(tip)}" role="img" aria-label="${esc(tip)}">${share >= 0.07 ? `<span>${c}</span>` : ""}</div>`;
+        })
+        .join("");
+      const missing = g.total != null ? g.total - n : 0;
+      const rest = missing > 0 ? `<div class="seg seg-empty" style="flex-grow:${missing}" data-tip="${esc(`${g.name}, no final label: ${missing}`)}"></div>` : "";
+      return `<div class="bar-row"><div class="bar-name">${esc(g.name)}</div><div class="bar">${segs}${rest || (n ? "" : '<div class="seg seg-empty" style="flex-grow:1"></div>')}</div><div class="bar-n">${denom}</div></div>`;
+    })
+    .join("");
+  return `${legend}<div class="bars">${bars}</div>`;
+}
+
+function confidenceHistogram(name, values, threshold) {
+  const bins = [
+    { key: "<.4", lo: 0, hi: 0.4 },
+    ...[0.4, 0.5, 0.6, 0.7, 0.8, 0.9].map((v) => ({ key: apa(v, 1), lo: v - 1e-9, hi: v + 0.1 - 1e-9 })),
+    { key: "1", lo: 1 - 1e-9, hi: 1.01 },
+  ];
+  const counts = bins.map((b) => values.filter((v) => v >= b.lo && v < b.hi).length);
+  const max = Math.max(1, ...counts);
+  const cols = bins
+    .map((b, i) => {
+      const above = b.lo + 1e-9 >= threshold - 1e-9;
+      const tip = `${name}, confidence ${b.key}: ${plural(counts[i], "item")}`;
+      return `<div class="hcol" data-tip="${esc(tip)}"><div class="hval">${counts[i] || ""}</div><div class="hbar ${above ? "hbar-on" : "hbar-off"}" style="height:${(counts[i] / max) * 100}%"></div><div class="hlab">${b.key}</div></div>`;
+    })
+    .join("");
+  return `<div class="hist"><div class="hist-name">${esc(name)}</div><div class="hplot">${cols}</div></div>`;
+}
+
+// ---------- numbering ----------
+
+function numberer() {
+  let f = 0, t = 0;
+  return {
+    fig: (caption, body) => `<figure class="fig"><div class="fig-body">${body}</div><figcaption><b>Figure ${++f}.</b> ${caption}</figcaption></figure>`,
+    tab: (caption, body, extra = "") => `<div class="tab"><p class="tab-cap"><b>Table ${++t}.</b> ${caption}</p>${extra}<div class="table-wrap">${body}</div></div>`,
+  };
+}
+
+// ---------- pieces ----------
+
+function statusBadge(status) {
+  const map = {
+    "Accepted (full agreement)": ["good", "✓", "Full agreement"],
+    "Accepted (majority)": ["warning", "◐", "Majority"],
+    "Accepted (single model)": ["warning", "◐", "Single model"],
+    Contested: ["critical", "✕", "Contested"],
+  };
+  const [cls, icon, short] = map[status] || ["muted", "", status];
+  return `<span class="status status-${cls}" data-tip="${esc(status)}"><span aria-hidden="true">${icon}</span> ${esc(short)}</span>`;
+}
+
+function labelChip(l, conf, tie, clause = null, clauses = {}) {
+  if (tie) return `<span class="chip chip-muted" data-tip="Tie between labels">tie</span>`;
+  if (!l) return `<span class="chip chip-muted">–</span>`;
+  const cl = clause ? ` <span class="chip-cl" data-tip="${esc(`${clause} ${clauses[clause]?.name || ""}`)}">${esc(clause)}</span>` : "";
+  return `<span class="chip"><i class="sw ${labelClass(l)}"></i>${esc(l)}${cl}${conf != null ? ` <span class="chip-c">${apa(conf, 1)}</span>` : ""}</span>`;
+}
+
+function resultsParagraph(result, c, final) {
+  const s = result.settings;
+  const nItems = c.rows.length;
+  const nQ = c.rows.filter((r) => r.level === "question").length;
+  const nDec = new Set(c.rows.map((r) => r.decision_id)).size;
+  const names = c.keys.map((k) => c.names[k]);
+  const relevant = SOURCE_LABELS.reduce((t, l) => t + final[l], 0);
+  const contested = c.rows.filter((r) => r.status === "Contested").length;
+  const conf = c.summaries.filter((x) => x.mean_confidence != null).map((x) => `${apa(x.mean_confidence)} for ${esc(c.names[x.model])}`);
+  const kStat = (v) =>
+    v?.fleiss?.kappa != null
+      ? `Fleiss' <i>κ</i> = ${apa(v.fleiss.kappa)}${v.fleiss.ci ? `, 95% CI ${ciText(v.fleiss.ci)}` : ""}`
+      : v?.pairwise?.[0]?.kappa != null
+        ? `Cohen's <i>κ</i> = ${apa(v.pairwise[0].kappa)}${v.pairwise[0].ci ? `, 95% CI ${ciText(v.pairwise[0].ci)}` : ""}`
+        : null;
+  const lk = (v) => (v?.fleiss?.kappa != null ? v.fleiss.interpretation : v?.pairwise?.[0]?.interpretation);
+  const [all, step1, step2, step3] = c.agreement;
+  const sentences = [];
+  sentences.push(
+    `We classified ${plural(nItems, "item")} from ${plural(nDec, "decision")}${nQ ? ` (${nItems - nQ} options and ${plural(nQ, "decision")} without options, classified at question level)` : ""} by their primary source of potential bias following ISO/IEC TR 24027:2021, using ${c.keys.length === 1 ? "one model" : `${c.keys.length} models`} (${esc(listJoin(names))}). Each item was sampled <i>N</i> = ${s.runs} times per model at temperature ${s.temperature}${s.shuffleLabels ? ", with the order of labels shuffled on every run" : ""}.`
+  );
+  if (conf.length) sentences.push(`Mean self-consistency confidence (<i>M</i>) was ${listJoin(conf)}.`);
+  if (c.keys.length >= 2 && kStat(all)) {
+    let t = `Agreement between models on the majority label was ${esc(lk(all))} across all four labels, ${kStat(all)}`;
+    if (kStat(step1)) t += `, and ${esc(lk(step1))} on whether an item is fairness-relevant, ${kStat(step1)}`;
+    t += ".";
+    if (kStat(step2)) t += ` For the ${plural(step2.items, "item")} that every model judged relevant, agreement on the bias source was ${esc(lk(step2))}, ${kStat(step2)}.`;
+    if (kStat(step3)) t += ` Where all models chose the same source (${plural(step3.items, "item")}), agreement on the TR 24027 bias type was ${esc(lk(step3))}, ${kStat(step3)}.`;
+    sentences.push(t);
+  }
+  const bySrc = SOURCE_LABELS.filter((l) => final[l]).sort((a, b) => final[b] - final[a]).map((l) => `${l} ${final[l]}`);
+  sentences.push(
+    `With an acceptance threshold of ${apa(c.threshold)}, ${plural(relevant, "item")} (${pct(nItems ? relevant / nItems : null)}) received a fairness-relevant final label${bySrc.length ? ` (${listJoin(bySrc)})` : ""}, ${final.None} ${final.None === 1 ? "was" : "were"} labelled None, and ${contested} (${pct(nItems ? contested / nItems : null)}) ${contested === 1 ? "was" : "were"} contested.`
+  );
+  const types = c.checklist.filter((x) => !x.unspecified);
+  const covered = types.filter((x) => x.count > 0);
+  if (relevant) {
+    const gaps = types.filter((x) => x.count === 0);
+    const gapText = gaps.length === 0 ? "every listed bias type was addressed by at least one item" : gaps.length <= 6 ? `no item addressed ${listJoin(gaps.map((g) => `${g.name.toLowerCase()} (${g.id})`))}` : `${gaps.length} bias types were not addressed by any item (see the checklist)`;
+    sentences.push(`Mapped to the bias types of ISO/IEC TR 24027:2021 clause 6, the fairness-relevant items addressed ${covered.length} of ${types.length} types; ${gapText}.`);
+  }
+  const voices = [...new Set(c.rows.map((r) => r.source).filter(Boolean))];
+  if (voices.length > 1) {
+    const v = voices.map((name) => {
+      const rs = c.rows.filter((r) => r.source === name);
+      const rel = rs.filter((r) => SOURCE_LABELS.includes(r.final_label)).length;
+      return `${rel} of ${rs.length} ${esc(name.toLowerCase())} items (${pct(rel / rs.length)})`;
+    });
+    sentences.push(`By voice, ${listJoin(v)} were fairness-relevant.`);
+  }
+  return sentences.join(" ");
+}
+
+function agreementTable(c) {
+  const rows = c.agreement
+    .map((v) => {
+      const head = `<tr class="group"><th colspan="7" scope="colgroup">${esc(v.view)}</th></tr>`;
+      const fl =
+        c.keys.length >= 3
+          ? `<tr><td>All models (Fleiss)</td><td class="num"><b>${apa(v.fleiss.kappa)}</b></td><td class="num">${ciText(v.fleiss.ci) || "–"}</td><td class="num">${apa(v.fleiss.pbar)}</td><td class="num">${apa(v.fleiss.pe)}</td><td class="num">${v.fleiss.n}</td><td>${esc(v.fleiss.interpretation)}</td></tr>`
+          : "";
+      const pairs = v.pairwise
+        .map((p) => `<tr><td>${esc(p.pair)} (Cohen)</td><td class="num">${apa(p.kappa)}</td><td class="num">${ciText(p.ci) || "–"}</td><td class="num">${apa(p.po)}</td><td class="num">${apa(p.pe)}</td><td class="num">${p.n}</td><td>${esc(p.interpretation)}</td></tr>`)
+        .join("");
+      return head + fl + (pairs || '<tr><td colspan="7" class="muted">Needs at least two models.</td></tr>');
+    })
+    .join("");
+  return `<table class="t"><thead><tr><th scope="col">Comparison</th><th scope="col" class="num"><i>κ</i></th><th scope="col" class="num">95% CI</th><th scope="col" class="num"><i>p</i><sub>o</sub></th><th scope="col" class="num"><i>p</i><sub>e</sub></th><th scope="col" class="num"><i>n</i></th><th scope="col">Landis and Koch</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function decisionTable(c) {
+  const byDec = new Map();
+  for (const r of c.rows) {
+    if (!byDec.has(r.decision_id)) byDec.set(r.decision_id, []);
+    byDec.get(r.decision_id).push(r);
+  }
+  const body = [...byDec.entries()]
+    .map(([id, rs]) => {
+      const relevant = rs.filter((r) => SOURCE_LABELS.includes(r.final_label));
+      const counts = Object.fromEntries(SOURCE_LABELS.map((l) => [l, relevant.filter((r) => r.final_label === l).length]));
+      const cells = SOURCE_LABELS.map((l) => `<td class="num">${counts[l] ? `<span class="dot ${labelClass(l)}" aria-hidden="true"></span>${counts[l]}` : '<span class="muted">·</span>'}</td>`).join("");
+      const contested = rs.filter((r) => r.status === "Contested").length;
+      return `<tr><td class="id">${esc(id)}</td><td>${esc(rs[0].source)}</td><td class="wide">${esc(rs[0].question)}</td><td class="num">${rs.length}${rs[0].level === "question" ? "<sup>a</sup>" : ""}</td><td class="num">${relevant.length}</td>${cells}<td class="num">${contested || '<span class="muted">·</span>'}</td></tr>`;
+    })
+    .join("");
+  return `<table class="t"><thead><tr><th scope="col">Decision</th><th scope="col">Voice</th><th scope="col">Question</th><th scope="col" class="num">Items</th><th scope="col" class="num">Relevant</th><th scope="col" class="num">Data</th><th scope="col" class="num">Cognitive</th><th scope="col" class="num">Engineering</th><th scope="col" class="num">Contested</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function driverTable(c) {
+  const xt = driverCrosstab(c.rows);
+  if (!xt.length) return "";
+  const cols = [...LABELS, "Contested"];
+  const body = xt
+    .map((d) => {
+      const eff = Object.entries(d.effects).sort((a, b) => b[1] - a[1]).map(([e, n]) => `${e} ${n}`).join(", ");
+      const cells = cols.map((l) => `<td class="num">${d.counts[l] ? (l === "Contested" ? d.counts[l] : `<span class="dot ${labelClass(l)}" aria-hidden="true"></span>${d.counts[l]}`) : '<span class="muted">·</span>'}</td>`).join("");
+      const rel = SOURCE_LABELS.reduce((t, l) => t + d.counts[l], 0);
+      return `<tr><td><b>${esc(d.name)}</b></td><td class="num">${d.total}</td>${cells}<td class="num">${apa(d.total ? rel / d.total : null)}</td><td class="muted">${esc(eff)}</td></tr>`;
+    })
+    .join("");
+  return `<table class="t"><thead><tr><th scope="col">Decision driver</th><th scope="col" class="num">Items</th>${cols.map((l) => `<th scope="col" class="num">${esc(l)}</th>`).join("")}<th scope="col" class="num">Share relevant</th><th scope="col">Effects</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function itemTable(c) {
+  const head = c.keys.map((k) => `<th scope="col">${esc(c.names[k])}</th>`).join("");
+  const body = c.rows
+    .map((r) => {
+      const cells = c.keys.map((k) => `<td>${labelChip(r.per[k].majority, r.per[k].confidence, r.per[k].tie, r.per[k].clause, c.clauses)}</td>`).join("");
+      const votes = c.keys
+        .map((k) => {
+          const p = r.per[k];
+          const v = LABELS.filter((l) => p.counts[l]).map((l) => `${l} ${p.counts[l]}`).join(", ") || "no answers";
+          return `<div><b>${esc(c.names[k])}</b>: ${esc(v)}${p.failed ? `; failed ${p.failed}` : ""}${p.entropy != null ? `; entropy ${apa(p.entropy)}` : ""}</div>`;
+        })
+        .join("");
+      const subject = r.option == null ? "<i>Question-level item</i>" : esc(r.option);
+      const drv = (r.drivers || []).length ? `<div class="drivers">${r.drivers.map((d) => `<span class="drv">${esc(driverText(d))}</span>`).join("")}</div>` : "";
+      return `<tr data-source="${esc(r.source)}" data-status="${esc(r.status)}" data-final="${esc(r.final_label || "none-final")}" data-text="${esc(`${r.item_id} ${r.category} ${r.question} ${r.option || ""}`.toLowerCase())}">
+        <td class="id">${esc(r.item_id)}</td><td>${esc(r.source)}</td>
+        <td class="wide"><details><summary>${subject}</summary><div class="q">${esc(r.question)}</div><div class="votes">${votes}</div></details>${drv}</td>
+        ${cells}<td class="num">${esc(r.agreement)}</td><td>${r.final_label ? labelChip(r.final_label, null, false, r.final_clause, c.clauses) : '<span class="muted">–</span>'}</td><td>${statusBadge(r.status)}</td></tr>`;
+    })
+    .join("");
+  return `<table class="t items"><thead><tr><th scope="col">ID</th><th scope="col">Voice</th><th scope="col">Option</th>${head}<th scope="col" class="num">Agree</th><th scope="col">Final</th><th scope="col">Status</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function itemFilters(c) {
+  const sources = [...new Set(c.rows.map((r) => r.source).filter(Boolean))];
+  const statuses = [...new Set(c.rows.map((r) => r.status))];
+  const opt = (v, t = v) => `<option value="${esc(v)}">${esc(t)}</option>`;
+  return `<div class="filters" role="group" aria-label="Filter items">
+    <label>Voice <select data-filter="source"><option value="">All</option>${sources.map((s) => opt(s)).join("")}</select></label>
+    <label>Status <select data-filter="status"><option value="">All</option>${statuses.map((s) => opt(s)).join("")}</select></label>
+    <label>Final label <select data-filter="final"><option value="">All</option>${LABELS.map((l) => opt(l)).join("")}${opt("none-final", "No final label")}</select></label>
+    <label class="grow">Search <input type="search" data-filter="text" placeholder="ID, question or option"></label>
+    <span class="filter-count muted" data-count></span>
+  </div>`;
+}
+
+function methods(result, c) {
+  const s = result.settings;
+  const example = result.items[0] ? buildUserPrompt(result.items[0], { context: s.context, definitions: s.definitions, taxonomy: c.taxonomy, includeDrivers: s.includeDrivers !== false }) : "";
+  const tempUsed = (k) => {
+    const used = (result.log || []).filter((e) => e.model === k && e.text != null);
+    return used.some((e) => e.temperature == null) ? "provider default" : String(s.temperature);
+  };
+  const models = result.models
+    .map((m) => `<tr><td>${esc(modelDisplayName(m))}</td><td>${esc(m.provider_name)}</td><td class="id">${esc(m.model)}</td><td class="num">${esc(tempUsed(m.key))}</td><td>${result.modelErrors?.[m.key] ? `<span class="status status-critical">✕ ${esc(result.modelErrors[m.key])}</span>` : "Completed"}</td></tr>`)
+    .join("");
+  const defs = LABELS.map((l) => `<dt><i class="sw ${labelClass(l)}"></i>${esc(l)}</dt><dd>${esc(s.definitions[l])}</dd>`).join("");
+  return `
+  <h3>Models</h3>
+  <div class="table-wrap"><table class="t"><thead><tr><th scope="col">Model</th><th scope="col">Provider</th><th scope="col">Model ID</th><th scope="col" class="num">Temperature</th><th scope="col">Status</th></tr></thead><tbody>${models}</tbody></table></div>
+
+  <h3>Label definitions</h3>
+  <dl class="defs">${defs}</dl>
+
+  <h3>Measures</h3>
+  <div class="eqs">
+    <p class="eq"><span class="eq-l">Self-consistency confidence</span><span class="eq-r"><i>c</i> = max<sub><i>k</i></sub> <i>n</i><sub><i>k</i></sub> / <i>N</i><sub>valid</sub></span></p>
+    <p class="eq-note">where <i>n<sub>k</sub></i> is the number of runs that returned label <i>k</i>. The majority label is undefined when two labels tie.</p>
+    <p class="eq"><span class="eq-l">Cohen's kappa (two models)</span><span class="eq-r"><i>κ</i> = (<i>p</i><sub>o</sub> − <i>p</i><sub>e</sub>) / (1 − <i>p</i><sub>e</sub>)</span></p>
+    <p class="eq-note">where <i>p</i><sub>o</sub> is observed agreement and <i>p</i><sub>e</sub> = Σ<sub><i>k</i></sub> <i>p</i><sub><i>k</i>,A</sub> <i>p</i><sub><i>k</i>,B</sub> is agreement expected by chance.</p>
+    <p class="eq"><span class="eq-l">Fleiss' kappa (three or more models)</span><span class="eq-r"><i>κ</i> = (<i>P̄</i> − <i>P̄</i><sub>e</sub>) / (1 − <i>P̄</i><sub>e</sub>)</span></p>
+    <p class="eq-note">Confidence intervals are percentile bootstrap intervals over items (${c.bootstrap ? `${BOOTSTRAP.B} resamples, seed ${BOOTSTRAP.seed}` : "computed when the run finishes"}). Interpretation follows Landis and Koch (1977).</p>
+  </div>
+
+  <h3>Procedure</h3>
+  <dl class="kv">
+    <dt>Runs per item and model</dt><dd><i>N</i> = ${s.runs}</dd>
+    <dt>Acceptance threshold</dt><dd>${apa(s.threshold)}: a model's label counts towards the final label only when its confidence is at least this value</dd>
+    <dt>Final label</dt><dd>All counted models agree (full agreement) or a majority of them agree; otherwise the item is contested</dd>
+    <dt>Step 1 and step 2</dt><dd>Step 1 compares fairness-relevant against None; step 2 compares the bias source on items every model judged relevant</dd>
+    <dt>Label order</dt><dd>${s.shuffleLabels ? "Shuffled on every run" : "Fixed"}</dd>
+    <dt>Decision drivers</dt><dd>${c.rows.some((r) => r.drivers?.length) ? (s.includeDrivers !== false ? "Given in the input and included in the prompt" : "Given in the input but not included in the prompt (used only for analysis)") : "None given in the input"}</dd>
+    <dt>Route</dt><dd>${s.route === "proxy" ? `Via API proxy${s.proxyUrl ? ` (${esc(s.proxyUrl)})` : ""}, ${s.encode ? "requests encoded (RSA-OAEP and AES-GCM) between browser and proxy" : "requests not encoded beyond HTTPS"}` : "Direct from the browser to each provider"}</dd>
+    <dt>Bias type</dt><dd>With each label, models choose one bias type from the clause 6 list (see the checklist). A model's bias type is its most frequent choice among runs that returned its majority label; the final bias type pools the votes of the models that support the final label</dd>
+    <dt>Step 3</dt><dd>Agreement on the bias type, for items where every model chose the same source</dd>
+    <dt>Run started</dt><dd>${esc(result.created_at || "")}</dd>
+    <dt>Run finished</dt><dd>${esc(result.finished_at || "Not finished")}</dd>
+    <dt>Software</dt><dd>${esc(TOOL.name)}, version ${esc(TOOL.version)}</dd>
+  </dl>
+  <details class="prompt"><summary>System prompt and the prompt for the first item</summary><pre>${esc(s.systemPrompt)}</pre><pre>${esc(example)}</pre></details>
+
+  <h3>Limitations</h3>
+  <ul class="notes">
+    <li>Agreement between models measures reliability, not correctness: models trained on similar data can share the same errors. No human validation is included.</li>
+    <li>The label definitions paraphrase the bias sources in ISO/IEC TR 24027:2021. Check them against the standard before publication.</li>
+    <li>Each item receives one primary source; items with several sources lose information.</li>
+  </ul>`;
+}
+
+function checklistSection(result, c) {
+  const textOf = Object.fromEntries(c.rows.map((r) => [r.item_id, r.option ?? r.question]));
+  const groups = ["Cognitive", "Data", "Engineering"]
+    .map((src) => {
+      const list = c.checklist.filter((x) => x.source === src);
+      const typed = list.filter((x) => !x.unspecified);
+      const addressed = typed.filter((x) => x.count > 0).length;
+      const head = `<tr class="group"><th colspan="5" scope="colgroup"><i class="sw ${labelClass(src)}" aria-hidden="true"></i> ${esc(CLAUSE_HEADINGS[src])} <span class="group-note">${addressed} of ${typed.length} bias types addressed</span></th></tr>`;
+      const body = list
+        .map((x) => {
+          const st = x.unspecified
+            ? `<span class="status status-muted">Source only</span>`
+            : x.count
+              ? `<span class="status status-good"><span aria-hidden="true">✓</span> Addressed</span>`
+              : `<span class="status status-critical"><span aria-hidden="true">✕</span> Gap</span>`;
+          const opts = x.items.length
+            ? x.items.map((id) => `<div class="opt"><span class="id">${esc(id)}</span> ${esc(textOf[id] || "")}</div>`).join("")
+            : '<span class="muted">No item</span>';
+          const key = `${x.source}|${x.id || "unspecified"}`;
+          return `<tr${x.count ? "" : ' class="gap"'}><td class="id">${esc(x.id || "–")}</td><td class="type"><b>${esc(x.name)}</b>${x.hint ? `<div class="hint-sm">${esc(x.hint)}</div>` : ""}</td><td>${st}</td><td class="opts">${opts}</td>
+            <td class="rev"><label class="rev-check"><input type="checkbox" data-review="${esc(key)}"> <span>Reviewed</span></label><input type="text" class="note" data-note="${esc(key)}" placeholder="Note" aria-label="Note for ${esc(x.name)}"></td></tr>`;
+        })
+        .join("");
+      return head + body;
+    })
+    .join("");
+  const types = c.checklist.filter((x) => !x.unspecified);
+  return `<section class="checklist" aria-labelledby="h-checklist" data-run="${esc(result.created_at || "run")}">
+    <h2 id="h-checklist">Checklist: ISO/IEC TR 24027 bias types</h2>
+    <p class="check-lead">Each bias type in clause 6 of the standard, with the items whose final label and agreed bias type match it. A <b>gap</b> means no decision option in this study addresses that type. Tick <i>Reviewed</i> and add notes as you check each row; ticks and notes are kept in this browser and appear when you print.</p>
+    <p class="check-count muted" data-review-count>${types.filter((x) => x.count > 0).length} of ${types.length} bias types addressed</p>
+    <div class="table-wrap"><table class="t check-table"><thead><tr><th scope="col">Clause</th><th scope="col">Bias type</th><th scope="col">Status</th><th scope="col">Items</th><th scope="col">Your review</th></tr></thead><tbody>${groups}</tbody></table></div>
+    <p class="table-note-in">Clause numbers and descriptions follow the tool author's reading of ISO/IEC TR 24027:2021 and can be edited in the tool. Verify them against the standard before publication. "Source only": items whose models agreed on the source but not on a bias type.</p>
+  </section>`;
+}
+
+// ---------- page ----------
+
+function renderDashboard(result, opts = {}) {
+  const c = computeResults(result, opts);
+  const n = numberer();
+  const final = Object.fromEntries(LABELS.map((l) => [l, c.rows.filter((r) => r.final_label === l).length]));
+  const voices = [...new Set(c.rows.map((r) => r.source).filter(Boolean))];
+  const finalGroups = [
+    ...voices.map((v) => {
+      const rs = c.rows.filter((r) => r.source === v);
+      return { name: v, counts: Object.fromEntries(LABELS.map((l) => [l, rs.filter((r) => r.final_label === l).length])), total: rs.length };
+    }),
+    ...(voices.length > 1 ? [{ name: "All items", counts: final, total: c.rows.length }] : voices.length ? [] : [{ name: "All items", counts: final, total: c.rows.length }]),
+  ];
+  const modelGroups = c.summaries.map((s) => ({ name: c.names[s.model], counts: s.distribution }));
+  const hists = c.keys.map((k) => confidenceHistogram(c.names[k], c.rows.map((r) => r.per[k].confidence).filter((v) => v != null), c.threshold)).join("");
+  const sumRows = c.summaries
+    .map((s) => `<tr><td>${esc(c.names[s.model])}</td><td class="num">${apa(s.mean_confidence)}</td><td class="num">${s.above_threshold} of ${c.rows.length}</td><td class="num">${s.ties}</td><td class="num">${s.failed_runs} of ${s.total_runs}</td></tr>`)
+    .join("");
+  const isDemo = result.models.some((m) => m.providerId === "demo");
+  const complete = c.done >= c.total;
+  const state = complete
+    ? `<span class="status status-good">✓ Complete</span>`
+    : `<span class="status status-warning">◐ ${result.status === "running" ? "Running" : "Partial"}: ${c.done} of ${c.total} calls</span>`;
+
+  return `<article class="paper" data-dashboard>
+  ${isDemo ? '<p class="banner banner-warn"><b>Simulated data.</b> These results come from the built-in demo models (keyword rules plus noise). They show how the tool works and are not research data.</p>' : ""}
+  <header class="paper-head">
+    <h2>${esc(result.input?.title || "Classification results")}</h2>
+    <p class="paper-meta">${state}<span>${plural(c.keys.length, "model")}, ${result.settings.runs} runs each, ${plural(c.rows.length, "item")}</span></p>
+  </header>
+
+  <section class="abstract" aria-labelledby="h-summary">
+    <div class="abstract-head"><h3 id="h-summary">Summary</h3><button type="button" class="btn btn-small btn-ghost" data-copy="#results-text">Copy text</button></div>
+    <p id="results-text">${resultsParagraph(result, c, final)}</p>
+    ${complete ? "" : '<p class="muted small">Figures update while the run continues. Confidence intervals are added when it finishes.</p>'}
+  </section>
+
+  ${n.fig(`Final label per item${voices.length > 1 ? ", by voice" : ""}. Hatched: no final label (contested). Numbers at right are item counts.`, stackedBars(finalGroups))}
+
+  <div class="pair">
+    ${n.fig("Majority label per model across its <i>N</i> runs. Ties are excluded.", stackedBars(modelGroups))}
+    ${n.tab(`Self-consistency per model. Confidence is the share of runs that returned the majority label.`, `<table class="t"><thead><tr><th scope="col">Model</th><th scope="col" class="num">Mean <i>c</i></th><th scope="col" class="num"><i>c</i> ≥ ${apa(c.threshold)}</th><th scope="col" class="num">Ties</th><th scope="col" class="num">Failed runs</th></tr></thead><tbody>${sumRows}</tbody></table>`)}
+  </div>
+
+  ${n.fig(`Distribution of self-consistency confidence per model. Dark bars are at or above the acceptance threshold (${apa(c.threshold)}).`, `<div class="hists">${hists}</div>`)}
+
+  ${n.tab("Agreement between models on the majority label, with bootstrap 95% confidence intervals.", agreementTable(c))}
+
+  ${n.tab("Fairness-relevant options per decision, by final bias source.", decisionTable(c), "")}
+  <p class="table-note"><sup>a</sup> Decision without options, classified at question level.</p>
+
+  ${driverTable(c) ? n.tab("Decision drivers by final bias source. Counts of items that carry each driver; effects as given in the input (++ strongly supports, + supports, N neutral, - hurts).", driverTable(c)) : ""}
+
+  ${n.tab("All items. Select an option to see every model's votes. Values after labels are confidence.", itemTable(c), itemFilters(c))}
+
+  <section class="methods" aria-labelledby="h-methods">
+    <h2 id="h-methods">Methods</h2>
+    ${methods(result, c)}
+  </section>
+
+  ${checklistSection(result, c)}
+</article>`;
+}
+
+// Interactive behaviour. Self-contained (no imports) so it can be embedded verbatim in the standalone report.
+function enhanceDashboard(root) {
+  if (!root) return;
+  const rows = Array.from(root.querySelectorAll("table.items tbody tr"));
+  const fields = Array.from(root.querySelectorAll("[data-filter]"));
+  const count = root.querySelector("[data-count]");
+  const apply = () => {
+    const f = {};
+    fields.forEach((el) => (f[el.dataset.filter] = el.value.trim().toLowerCase()));
+    let shown = 0;
+    rows.forEach((tr) => {
+      const ok =
+        (!f.source || tr.dataset.source.toLowerCase() === f.source) &&
+        (!f.status || tr.dataset.status.toLowerCase() === f.status) &&
+        (!f.final || tr.dataset.final.toLowerCase() === f.final) &&
+        (!f.text || tr.dataset.text.includes(f.text));
+      tr.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (count) count.textContent = `${shown} of ${rows.length} items`;
+  };
+  fields.forEach((el) => el.addEventListener("input", apply));
+  apply();
+
+  root.querySelectorAll("[data-copy]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const el = root.querySelector(b.dataset.copy);
+      const text = el ? el.innerText : "";
+      try {
+        await navigator.clipboard.writeText(text);
+        b.textContent = "Copied";
+      } catch (_) {
+        const r = document.createRange();
+        r.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        b.textContent = "Text selected, press Ctrl+C";
+      }
+      setTimeout(() => (b.textContent = "Copy text"), 2000);
+    })
+  );
+
+  // Checklist review: ticks and notes are kept per run in this browser (if storage is available).
+  const sec = root.querySelector("[data-run]");
+  if (sec) {
+    const prefix = `tr24027-review:${sec.dataset.run}:`;
+    const get = (k) => { try { return localStorage.getItem(prefix + k); } catch (_) { return null; } };
+    const set = (k, v) => { try { v == null ? localStorage.removeItem(prefix + k) : localStorage.setItem(prefix + k, v); } catch (_) { /* storage unavailable */ } };
+    const boxes = Array.from(sec.querySelectorAll("[data-review]"));
+    const counter = sec.querySelector("[data-review-count]");
+    const base = counter ? counter.textContent.split(";")[0] : "";
+    const update = () => counter && (counter.textContent = `${base}; ${boxes.filter((b) => b.checked).length} of ${boxes.length} rows reviewed`);
+    boxes.forEach((b) => {
+      b.checked = get(`c:${b.dataset.review}`) === "1";
+      b.closest("tr")?.classList.toggle("reviewed", b.checked);
+      b.addEventListener("change", () => (set(`c:${b.dataset.review}`, b.checked ? "1" : null), b.closest("tr")?.classList.toggle("reviewed", b.checked), update()));
+    });
+    sec.querySelectorAll("[data-note]").forEach((n) => {
+      n.value = get(`n:${n.dataset.note}`) || "";
+      n.addEventListener("input", () => set(`n:${n.dataset.note}`, n.value || null));
+    });
+    update();
+  }
+
+  let tip = document.querySelector(".tip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.className = "tip";
+    tip.setAttribute("role", "tooltip");
+    document.body.appendChild(tip);
+  }
+  const move = (e) => {
+    const t = e.target.closest && e.target.closest("[data-tip]");
+    if (!t || !root.contains(t)) return (tip.style.opacity = "0");
+    tip.textContent = t.getAttribute("data-tip");
+    const x = Math.min(window.innerWidth - tip.offsetWidth - 8, e.clientX + 12);
+    tip.style.transform = `translate(${Math.max(8, x)}px, ${e.clientY + 14}px)`;
+    tip.style.opacity = "1";
+  };
+  root.addEventListener("mousemove", move);
+  root.addEventListener("mouseleave", () => (tip.style.opacity = "0"));
+}
+
+function buildReportHTML(result, css) {
+  const json = JSON.stringify(result).replace(/</g, "\\u003c");
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(result.input?.title || "Classification report")}: report</title>
+<style>${css}<\/style></head>
+<body class="report">
+<main class="wrap">
+<p class="report-note">Report generated ${esc(new Date().toISOString())} with ${esc(TOOL.name)} ${esc(TOOL.version)}. Every model response is embedded in this file; load it into the tool to inspect or resume the run.</p>
+${renderDashboard(result)}
+</main>
+<script type="application/json" id="result-data">${json}<\/script>
+<script>(${enhanceDashboard.toString()})(document.querySelector("[data-dashboard]"));<\/script>
+</body></html>`;
+}
+
+// Extracts the embedded result JSON from a downloaded report, so reports can be re-loaded too.
+function resultFromReportHTML(html) {
+  const m = html.match(/<script type="application\/json" id="result-data">([\s\S]*?)<\/script>/);
+  return m ? JSON.parse(m[1]) : null;
+}
+
+return { TOOL, BOOTSTRAP, modelDisplayName, computeResults, renderDashboard, enhanceDashboard, buildReportHTML, resultFromReportHTML };
+})();
+
+// ---- app.js ----
+const __mod_app = (() => {
+// app.js — wires the page together: input files, keys, settings, running, dashboard and downloads.
+
+const {
+  LABELS, DEFAULT_DEFINITIONS, DEFAULT_SYSTEM_PROMPT, DEFAULT_CONTEXT, DEFAULT_TAXONOMY,
+  validateInput, validateTaxonomy, flattenItems, buildUserPrompt, toCSV,
+} = __mod_core;
+const { PROVIDERS } = __mod_providers;
+const { createTransport } = __mod_transport;
+const { runClassification } = __mod_runner;
+const {
+  TOOL, renderDashboard, enhanceDashboard, buildReportHTML, computeResults, resultFromReportHTML, modelDisplayName,
+} = __mod_report;
+
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (_) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (_) { /* ignore */ } },
+};
+const KEYS_KEY = "tr24027:keys";
+const RUN_KEY = "tr24027:lastRun";
+const ROUTE_KEY = "tr24027:route"; // route choice and proxy address (never keys)
+
+const MODELS_KEY = "tr24027:models"; // names, providers, model IDs and URLs (never keys)
+const SHORT = { anthropic: "Claude", openai: "GPT", gemini: "Gemini", compatible: "Custom model", demo: "Simulated" };
+const MAX_ROWS = 6;
+const DEFAULT_ROWS = [
+  { id: "m1", enabled: true, name: "Claude", providerId: "anthropic", model: PROVIDERS.anthropic.defaultModel, baseUrl: "" },
+  { id: "m2", enabled: true, name: "GPT", providerId: "openai", model: PROVIDERS.openai.defaultModel, baseUrl: "" },
+  { id: "m3", enabled: true, name: "Gemini", providerId: "gemini", model: PROVIDERS.gemini.defaultModel, baseUrl: "" },
+];
+const DEMO_ROWS = [
+  { id: "sim-a", enabled: true, name: "Sim A", providerId: "demo", model: "sim-a", baseUrl: "" },
+  { id: "sim-b", enabled: true, name: "Sim B", providerId: "demo", model: "sim-b", baseUrl: "" },
+  { id: "sim-c", enabled: true, name: "Sim C", providerId: "demo", model: "sim-c", baseUrl: "" },
+];
+let modelRows = (() => {
+  const saved = store.get(MODELS_KEY);
+  return Array.isArray(saved) && saved.length && saved.every((r) => r.id && PROVIDERS[r.providerId]) ? saved : structuredClone(DEFAULT_ROWS);
+})();
+let demoRows = structuredClone(DEMO_ROWS);
+
+let input = null; // { title, context, notes, decisions }
+let items = [];
+let result = null; // current result object (running, finished or loaded)
+let controller = null;
+
+// ---------------- data ----------------
+
+function mergeInputs(list) {
+  const decisions = [];
+  let title = null, context = null;
+  const notes = [];
+  for (const { name, data } of list) {
+    title = title || data.title || name;
+    context = context || data.context || null;
+    if (data.notes) notes.push(data.notes);
+    decisions.push(...data.decisions);
+  }
+  if (list.length > 1) title = `${list.length} files: ${list.map((x) => x.name).join(", ")}`;
+  return { title, context, notes: notes.join("\n"), decisions };
+}
+
+function setInput(merged) {
+  const errs = validateInput(merged);
+  const box = $("#data-errors");
+  if (errs.length) {
+    box.hidden = false;
+    box.innerHTML = `<b>Please fix the input:</b><ul>${errs.slice(0, 20).map((e) => `<li>${escapeHTML(e)}</li>`).join("")}</ul>${errs.length > 20 ? `<p>…and ${errs.length - 20} more.</p>` : ""}`;
+    return;
+  }
+  box.hidden = true;
+  input = merged;
+  items = flattenItems(merged);
+  const dupes = items.map((i) => i.item_id).filter((id, i, a) => a.indexOf(id) !== i);
+  if (dupes.length) {
+    box.hidden = false;
+    box.innerHTML = `<b>Duplicate option IDs:</b> ${escapeHTML([...new Set(dupes)].join(", "))}. Give each option a unique "id".`;
+    input = null; items = [];
+    updateEstimate();
+    return;
+  }
+  if (merged.context) $("#context").value = merged.context;
+  const bySource = {};
+  for (const it of items) bySource[it.source || "—"] = (bySource[it.source || "—"] || 0) + 1;
+  const q = items.filter((i) => i.level === "question").length;
+  $("#data-summary").hidden = false;
+  const withDrivers = items.filter((i) => i.drivers?.length).length;
+  $("#data-summary").innerHTML = `<b>${escapeHTML(merged.title || "Input")}</b>: ${merged.decisions.length} decisions → <b>${items.length} items</b> (${items.length - q} options${q ? `, ${q} question-level` : ""}). ${Object.entries(bySource).map(([k, v]) => `${escapeHTML(k)} ${v}`).join(", ")}. ${withDrivers ? `${withDrivers} items have decision drivers.` : "No decision drivers given."}`;
+  updateEstimate();
+  updatePreview();
+}
+
+async function readFiles(fileList) {
+  const list = [];
+  for (const f of fileList) {
+    try {
+      list.push({ name: f.name, data: JSON.parse(await f.text()) });
+    } catch (e) {
+      $("#data-errors").hidden = false;
+      $("#data-errors").textContent = `${f.name}: not valid JSON (${e.message})`;
+      return;
+    }
+  }
+  if (list.length) setInput(mergeInputs(list));
+}
+
+// ---------------- models ----------------
+// Each row: tick box, a name you choose, provider, model ID, API key, and a base URL for OpenAI-compatible services.
+
+const isDemo = () => $("#demo-mode").checked;
+const rowsNow = () => (isDemo() ? demoRows : modelRows);
+const saveRows = () => !isDemo() && store.set(MODELS_KEY, modelRows);
+const savedKeys = () => store.get(KEYS_KEY) || {};
+
+function providerOptions(selected, demo) {
+  const ids = demo ? ["demo"] : ["anthropic", "openai", "gemini", "compatible"];
+  return ids.map((id) => `<option value="${id}"${id === selected ? " selected" : ""}>${escapeHTML(PROVIDERS[id].name)}</option>`).join("");
+}
+
+function renderModelRows() {
+  const demo = isDemo();
+  const keys = savedKeys();
+  $("#model-rows").innerHTML = rowsNow()
+    .map((r) => {
+      const p = PROVIDERS[r.providerId];
+      const keyField = p.noKey
+        ? `<span class="muted small">No key needed</span>`
+        : `<input type="password" class="key" data-row="${r.id}" autocomplete="off" spellcheck="false" placeholder="${p.optionalKey ? "API key (if the service needs one)" : "API key"}" value="${escapeHTML(keys[r.id] || "")}" aria-label="API key for ${escapeHTML(r.name)}">`;
+      return `<div class="model-row" data-row="${r.id}">
+        <input type="checkbox" class="enabled" data-row="${r.id}" ${r.enabled ? "checked" : ""} aria-label="Use ${escapeHTML(r.name)}">
+        <label class="mfield"><span>Name in the report</span><input type="text" class="mname" data-row="${r.id}" value="${escapeHTML(r.name)}" maxlength="40" spellcheck="false"></label>
+        <label class="mfield"><span>Provider</span><select class="mprov" data-row="${r.id}" ${demo ? "disabled" : ""}>${providerOptions(r.providerId, demo)}</select></label>
+        <label class="mfield"><span>Model ID</span><input type="text" class="model" data-row="${r.id}" list="dl-${r.id}" value="${escapeHTML(r.model)}" placeholder="${p.needsBaseUrl ? "e.g. deepseek-chat" : ""}" spellcheck="false" ${demo ? "readonly" : ""}></label>
+        <datalist id="dl-${r.id}"></datalist>
+        ${p.needsBaseUrl ? `<label class="mfield mfield-url"><span>Base URL of the service</span><input type="url" class="burl" data-row="${r.id}" value="${escapeHTML(r.baseUrl || "")}" placeholder="https://openrouter.ai/api/v1" spellcheck="false"></label>` : ""}
+        <div class="mkey">${keyField}</div>
+        <div class="mact">
+          ${demo ? "" : `<button type="button" class="btn btn-small btn-ghost" data-load="${r.id}">Check key</button>`}
+          ${p.keyHelp ? `<a class="small" href="${p.keyHelp}" target="_blank" rel="noopener">Get a key</a>` : ""}
+          ${!demo && modelRows.length > 1 ? `<button type="button" class="btn btn-small btn-ghost btn-remove" data-remove="${r.id}" aria-label="Remove ${escapeHTML(r.name)}">Remove</button>` : ""}
+        </div>
+        <span class="model-msg small muted" data-msg="${r.id}"></span>
+      </div>`;
+    })
+    .join("");
+  $("#add-model").hidden = demo || modelRows.length >= MAX_ROWS;
+  updateEstimate();
+}
+
+function addModelRow() {
+  if (modelRows.length >= MAX_ROWS) return;
+  let n = 1;
+  while (modelRows.some((r) => r.id === `m${n}`)) n++;
+  modelRows.push({ id: `m${n}`, enabled: true, name: `Model ${modelRows.length + 1}`, providerId: "compatible", model: "", baseUrl: "" });
+  saveRows();
+  renderModelRows();
+  document.querySelector(`.mname[data-row="m${n}"]`)?.focus();
+}
+
+function onModelRowsInput(e) {
+  const el = e.target;
+  const row = rowsNow().find((r) => r.id === el.dataset.row);
+  if (!row) return;
+  if (el.classList.contains("enabled")) row.enabled = el.checked;
+  else if (el.classList.contains("mname")) row.name = el.value;
+  else if (el.classList.contains("model")) row.model = el.value.trim();
+  else if (el.classList.contains("burl")) row.baseUrl = el.value.trim();
+  else if (el.classList.contains("mprov")) {
+    const wasDefaultName = !row.name.trim() || row.name === SHORT[row.providerId];
+    const wasDefaultModel = !row.model || row.model === PROVIDERS[row.providerId].defaultModel;
+    row.providerId = el.value;
+    if (wasDefaultName) row.name = SHORT[row.providerId];
+    if (wasDefaultModel) row.model = PROVIDERS[row.providerId].defaultModel;
+    saveRows();
+    return renderModelRows();
+  } else if (el.classList.contains("key")) return saveKeysIfWanted();
+  saveRows();
+  updateEstimate();
+}
+
+function selectedModels() {
+  return rowsNow()
+    .filter((r) => r.enabled)
+    .map((r) => {
+      const p = PROVIDERS[r.providerId];
+      const apiKey = p.noKey ? "" : (document.querySelector(`.key[data-row="${r.id}"]`)?.value || "").trim();
+      const name = r.name.trim() || SHORT[r.providerId];
+      return { key: r.id, providerId: r.providerId, provider_name: p.name, model: r.model.trim(), apiKey, baseUrl: r.baseUrl || "", short: name, label: `${name} (${r.model.trim()})` };
+    });
+}
+
+function saveKeysIfWanted() {
+  if (!$("#remember-keys").checked) return store.del(KEYS_KEY);
+  const o = savedKeys();
+  document.querySelectorAll(".key").forEach((el) => (o[el.dataset.row] = el.value.trim()));
+  store.set(KEYS_KEY, o);
+}
+
+async function loadModels(rowId) {
+  const r = rowsNow().find((x) => x.id === rowId);
+  const p = PROVIDERS[r.providerId];
+  const msg = document.querySelector(`[data-msg="${rowId}"]`);
+  const key = p.noKey ? "" : (document.querySelector(`.key[data-row="${rowId}"]`)?.value || "").trim();
+  if (!p.noKey && !p.optionalKey && !key) return (msg.textContent = "Enter the API key first.");
+  if (p.needsBaseUrl && !r.baseUrl) return (msg.textContent = "Enter the base URL of the service first.");
+  msg.className = "model-msg small muted";
+  msg.textContent = "Checking…";
+  const route = readRoute();
+  const problem = route.route === "proxy" ? proxyUrlProblem(route.proxyUrl) : "";
+  if (problem) { msg.textContent = problem; msg.className = "model-msg small err"; return; }
+  try {
+    const ids = await p.listModels(key, undefined, r.baseUrl, currentTransport());
+    document.querySelector(`#dl-${rowId}`).innerHTML = ids.map((id) => `<option value="${escapeHTML(id)}">`).join("");
+    msg.textContent = `Key works. ${ids.length} models available: click the Model ID field to choose one.`;
+    msg.className = "model-msg small ok";
+  } catch (e) {
+    const cors = e instanceof TypeError || /network error|failed to fetch/i.test(e.message);
+    msg.textContent = cors && p.needsBaseUrl
+      ? `Could not reach the service. It may not accept calls from a browser (CORS), or the URL is wrong. (${e.message})`
+      : `Could not list models: ${e.message}`;
+    msg.className = "model-msg small err";
+  }
+}
+
+// ---------------- settings ----------------
+
+function renderDefs(defs = DEFAULT_DEFINITIONS) {
+  $("#defs").innerHTML = LABELS.map(
+    (l) => `<label class="field">${l}<textarea rows="2" data-def="${l}">${escapeHTML(defs[l])}</textarea></label>`
+  ).join("");
+}
+
+function readSettings() {
+  const n = (id, d) => {
+    const v = Number($(id).value);
+    return Number.isFinite(v) ? v : d;
+  };
+  const definitions = {};
+  document.querySelectorAll("[data-def]").forEach((el) => (definitions[el.dataset.def] = el.value.trim()));
+  return {
+    runs: Math.max(1, Math.round(n("#runs", 10))),
+    temperature: n("#temperature", 0.7),
+    threshold: n("#threshold", 0.8),
+    concurrency: Math.max(1, Math.round(n("#concurrency", 4))),
+    rpm: Math.max(0, n("#rpm", 0)),
+    maxRetries: Math.max(0, Math.round(n("#retries", 5))),
+    shuffleLabels: $("#shuffle").checked,
+    context: $("#context").value.trim() || DEFAULT_CONTEXT,
+    systemPrompt: $("#system-prompt").value.trim() || DEFAULT_SYSTEM_PROMPT,
+    definitions,
+    taxonomy: readTaxonomy() || DEFAULT_TAXONOMY,
+    includeDrivers: $("#include-drivers").checked,
+    ...readRoute(),
+  };
+}
+
+// Bias-type list (TR 24027 clause 6), editable as JSON. Returns null when the JSON is invalid.
+function readTaxonomy() {
+  const el = $("#taxonomy");
+  if (!el) return DEFAULT_TAXONOMY;
+  const box = $("#taxonomy-error");
+  try {
+    const t = JSON.parse(el.value);
+    const errs = validateTaxonomy(t);
+    if (errs.length) throw new Error(errs.join(" "));
+    box.hidden = true;
+    return t;
+  } catch (e) {
+    box.hidden = false;
+    box.textContent = `The bias-type list is not valid: ${e.message}`;
+    return null;
+  }
+}
+
+function updateEstimate() {
+  const m = selectedModels().length;
+  const s = readSettings();
+  const calls = items.length * m * s.runs;
+  $("#estimate").innerHTML = items.length
+    ? `${items.length} items × ${m} model${m === 1 ? "" : "s"} × ${s.runs} runs = <b>${calls.toLocaleString()} API calls</b>. Each call is short (about 400 input and 20 output tokens).${m < 3 ? " <b>Fleiss' κ needs 3 models</b>; pairwise κ needs 2." : ""}`
+    : "Load decisions first (step 1).";
+}
+
+function updatePreview() {
+  if (!items.length) return ($("#prompt-preview").textContent = "Load decisions first.");
+  const s = readSettings();
+  $("#prompt-preview").textContent = `SYSTEM:\n${s.systemPrompt}\n\nUSER:\n${buildUserPrompt(items[0], { context: s.context, definitions: s.definitions, taxonomy: s.taxonomy, includeDrivers: s.includeDrivers })}`;
+}
+
+// ---------------- route (direct or via API proxy) ----------------
+
+function readRoute() {
+  const route = document.querySelector('input[name="route"]:checked')?.value || "direct";
+  return { route, proxyUrl: route === "proxy" ? $("#proxy-url").value.trim() : "", encode: route === "proxy" && $("#encode").checked };
+}
+
+function currentTransport() {
+  return createTransport({ ...readRoute(), onRecord: addRecord });
+}
+
+function onRouteChange() {
+  const r = readRoute();
+  $("#proxy-settings").hidden = r.route !== "proxy";
+  store.set(ROUTE_KEY, { route: r.route, proxyUrl: $("#proxy-url").value.trim(), encode: $("#encode").checked });
+  updatePreview();
+}
+
+// A proxy address is a full https URL, http on this computer, or a path on this site such as /api/proxy.
+function proxyUrlProblem(u) {
+  if (!u) return "Enter the API proxy address in step 2, or choose Direct.";
+  if (u.startsWith("/")) return location.protocol.startsWith("http") ? "" : "A path such as /api/proxy works only when this page is served from a website, not opened as a file.";
+  try {
+    const x = new URL(u);
+    if (x.protocol === "https:") return "";
+    if (x.protocol === "http:" && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(x.hostname)) return "";
+    return "The API proxy address must start with https:// (http:// only for localhost).";
+  } catch { return "The API proxy address is not a valid address. Use https://… or a path such as /api/proxy."; }
+}
+
+async function checkProxy() {
+  const msg = $("#proxy-msg");
+  msg.className = "small muted";
+  msg.textContent = "Checking…";
+  const problem = proxyUrlProblem($("#proxy-url").value.trim());
+  if (problem) { msg.textContent = problem; msg.className = "small err"; return; }
+  try {
+    const h = await createTransport({ route: "proxy", proxyUrl: $("#proxy-url").value }).checkProxy();
+    const enc = $("#encode").checked && !h.encoding ? " Encoding is not set up on this proxy: turn off Encode requests, or ask its owner to add a key." : "";
+    msg.textContent = `Proxy ${h.version} reachable. Encoding ${h.encoding ? `available (key ${h.keyId})` : "not available"}. Forwards only to: ${(h.allowedHosts || []).join(", ")}. Logging: ${h.logging}.${enc}`;
+    msg.className = enc ? "small warn-text" : "small ok";
+  } catch (e) {
+    msg.textContent = `Could not reach the proxy: ${e.message}`;
+    msg.className = "small err";
+  }
+}
+
+// ---------------- request inspector ----------------
+
+const records = [];
+const MAX_RECORDS = 300;
+let inspTimer = null;
+
+function addRecord(rec) {
+  records.push(rec);
+  if (records.length > MAX_RECORDS) records.shift();
+  $("#insp-count").textContent = `(${records.length}${records.length === MAX_RECORDS ? ", newest kept" : ""})`;
+  if ($("#inspector").open && !inspTimer) inspTimer = setTimeout(() => ((inspTimer = null), renderInspector()), 400);
+}
+
+function pretty(v, readable) {
+  if (v == null) return "";
+  let s = typeof v === "string" ? v : JSON.stringify(v, null, 2);
+  if (typeof v === "string") {
+    try {
+      s = JSON.stringify(JSON.parse(v), null, 2);
+    } catch (_) { /* plain text */ }
+  }
+  // In the decoded view, show prompt line breaks as real line breaks.
+  return readable ? s.replace(/\\n/g, "\n") : s;
+}
+
+function renderInspector() {
+  const view = document.querySelector('input[name="insp-view"]:checked')?.value || "decoded";
+  const list = $("#insp-list");
+  if (!records.length) return (list.innerHTML = '<p class="muted small">No requests yet. Run a classification or check a key.</p>');
+  const open = new Set([...list.querySelectorAll("details[open]")].map((d) => d.dataset.id));
+  list.innerHTML = records
+    .slice()
+    .reverse()
+    .map((r) => {
+      const req = view === "decoded" ? r.decoded : r.sent;
+      const res = view === "decoded" ? r.response : r.responseSent;
+      const status = r.error ? `<span class="err">${escapeHTML(r.error)}</span>` : `HTTP ${r.status}`;
+      const reqText = req ? pretty(req, view === "decoded") : "This request did not travel over the network (simulated model).";
+      return `<details class="insp-item" data-id="${r.id}" ${open.has(String(r.id)) ? "open" : ""}>
+        <summary><span class="insp-n">#${r.id}</span> <span>${escapeHTML(r.route)}</span> <span class="mono-s">${escapeHTML(r.model || r.target)}</span> <span class="insp-st">${status}, ${r.ms} ms</span></summary>
+        <div class="insp-body">
+          <div class="insp-h">Request ${view === "decoded" ? "(decoded)" : "(as it left the browser)"}</div><pre>${escapeHTML(reqText)}</pre>
+          <div class="insp-h">Response ${view === "decoded" ? "(decoded)" : "(as received)"}</div><pre>${escapeHTML(res == null ? "" : pretty(res, view === "decoded"))}</pre>
+        </div>
+      </details>`;
+    })
+    .join("");
+}
+
+// ---------------- run ----------------
+
+function newResult(models, settings) {
+  return {
+    tool: TOOL,
+    created_at: new Date().toISOString(),
+    finished_at: null,
+    status: "running",
+    input,
+    items,
+    models: models.map(({ apiKey, ...m }) => m), // keys are never stored in results
+    settings,
+    raw: {},
+    clauses: {},
+    log: [],
+    modelErrors: {},
+  };
+}
+
+function renderProgress(perModel, total) {
+  $("#progress").hidden = false;
+  $("#progress").innerHTML = result.models
+    .map((m) => {
+      const d = perModel[m.key] || 0;
+      const err = result.modelErrors?.[m.key];
+      return `<div class="prog-row"><span class="prog-name">${escapeHTML(modelDisplayName(m))}</span><div class="prog-bar"><div style="width:${(100 * d) / total}%" class="${err ? "prog-err" : ""}"></div></div><span class="prog-n">${d} of ${total}${err ? ", stopped" : ""}</span></div>`;
+    })
+    .join("");
+}
+
+function logLine(text, cls = "") {
+  const el = $("#run-log");
+  el.hidden = false;
+  const line = document.createElement("div");
+  line.className = cls;
+  line.textContent = `${new Date().toLocaleTimeString()} ${text}`;
+  el.prepend(line);
+  while (el.childElementCount > 80) el.lastChild.remove();
+}
+
+async function start({ resume = false } = {}) {
+  let models = selectedModels();
+  if (resume) {
+    // Resume needs the same models; keys come from the current inputs.
+    const byKey = Object.fromEntries(selectedModels().map((m) => [m.key, m]));
+    models = result.models.map((m) => ({ ...m, apiKey: byKey[m.key]?.apiKey || "" }));
+    items = result.items;
+    input = result.input;
+  } else {
+    if (!items.length) return alert("Load decisions first (step 1).");
+    if (!models.length) return alert("Enable at least one model (step 2).");
+  }
+  const need = (pred) => models.filter(pred).map((m) => m.short || m.provider_name);
+  const missing = need((m) => !PROVIDERS[m.providerId].noKey && !PROVIDERS[m.providerId].optionalKey && !m.apiKey);
+  if (missing.length) return alert(`Missing API key for: ${missing.join(", ")}`);
+  const noModel = need((m) => !m.model);
+  if (noModel.length) return alert(`Missing model ID for: ${noModel.join(", ")}`);
+  const noUrl = need((m) => PROVIDERS[m.providerId].needsBaseUrl && !m.baseUrl);
+  if (noUrl.length) return alert(`Missing base URL for: ${noUrl.join(", ")}`);
+  const names = models.map((m) => m.short.toLowerCase());
+  if (new Set(names).size !== names.length) return alert("Give each model a different name; the names label the results.");
+  if (!resume && !readTaxonomy()) return alert("The bias-type list in step 3 is not valid JSON. Fix it or restore the defaults.");
+  const routeNow = resume ? { route: result.settings.route || "direct", proxyUrl: result.settings.proxyUrl || "", encode: !!result.settings.encode } : readRoute();
+  if (routeNow.route === "proxy") { const p = proxyUrlProblem(routeNow.proxyUrl); if (p) return alert(p); }
+  saveKeysIfWanted();
+
+  const settings = resume ? result.settings : readSettings();
+  if (!resume) {
+    result = newResult(models, settings);
+    $("#run-log").innerHTML = "";
+  }
+  result.status = "running";
+  controller = new AbortController();
+  setRunning(true);
+
+  const perTotal = result.items.length * settings.runs;
+  const perModel = {};
+  for (const m of result.models) perModel[m.key] = result.items.reduce((s, it) => s + ((result.raw[m.key]?.[it.item_id] || []).length), 0);
+  renderProgress(perModel, perTotal);
+  let lastDraw = 0, lastDash = 0;
+
+  const out = await runClassification({
+    items: result.items,
+    models,
+    settings,
+    signal: controller.signal,
+    transport: createTransport({ ...routeNow, onRecord: addRecord }),
+    resume: resume ? { raw: result.raw, clauses: result.clauses, log: result.log } : null,
+    onProgress: (p) => {
+      result.raw = p.raw; // live references: autosave and the live dashboard see partial results
+      result.clauses = p.clauses;
+      result.log = p.log;
+      if (p.last) {
+        perModel[p.last.model] = (perModel[p.last.model] || 0) + 1;
+        if (p.last.error) logLine(`${p.last.model}, ${p.last.item_id}, run ${p.last.run}: ${p.last.error}`, "warn");
+      }
+      if (p.retry) logLine(`${p.retry.model}: ${p.retry.message} — retrying in ${(p.retry.waitMs / 1000).toFixed(1)} s`, "muted");
+      if (p.error?.fatal) {
+        result.modelErrors[p.error.model] = p.error.message;
+        logLine(`${p.error.model} stopped: ${p.error.message}`, "err");
+      }
+      const now = performance.now();
+      if (now - lastDraw > 150 || p.done === p.total) (renderProgress(perModel, perTotal), (lastDraw = now));
+      if (now - lastDash > 4000) (showDashboard(), (lastDash = now)); // live partial results
+    },
+  });
+
+  result.raw = out.raw;
+  result.clauses = out.clauses;
+  result.log = out.log;
+  result.modelErrors = { ...result.modelErrors, ...out.modelErrors };
+  const c = computeResults(result, { bootstrap: false });
+  result.status = out.cancelled ? "cancelled" : c.done >= c.total ? "complete" : "incomplete";
+  if (result.status === "complete") result.finished_at = new Date().toISOString();
+  renderProgress(perModel, perTotal);
+  logLine(
+    result.status === "complete" ? "Finished." : result.status === "cancelled" ? "Cancelled. You can resume later." : "Stopped with some calls missing. Fix the problem (e.g. key or model ID) and resume.",
+    result.status === "complete" ? "ok" : "warn"
+  );
+  persistRun();
+  setRunning(false);
+  showDashboard();
+}
+
+// Saves the run (without keys) so it survives a closed tab. Large runs may exceed browser storage.
+function persistRun() {
+  if (!result) return;
+  if (result.status === "complete") return store.del(RUN_KEY);
+  if (!store.set(RUN_KEY, result)) logLine("Could not save progress in this browser (storage full). Download the JSON to keep it.", "warn");
+}
+
+let running = false;
+function setRunning(on) {
+  running = on;
+  updateButtons();
+}
+function updateButtons() {
+  $("#start").disabled = running;
+  $("#cancel").hidden = !running;
+  $("#resume").hidden = running || !result || result.status === "complete";
+  for (const b of ["#dl-html", "#dl-csv", "#dl-json"]) $(b).disabled = running || !result;
+}
+
+// Autosave every 5 s while running
+setInterval(() => {
+  if (result?.status === "running") persistRun();
+}, 5000);
+
+// ---------------- dashboard + downloads ----------------
+
+function showDashboard() {
+  if (!result) return;
+  // keep the user's item filters when the live dashboard refreshes
+  const prev = {};
+  document.querySelectorAll("#dashboard [data-filter]").forEach((el) => (prev[el.dataset.filter] = el.value));
+  // confidence intervals (2,000 bootstrap resamples) are computed once the run is no longer in progress
+  $("#dashboard").innerHTML = renderDashboard(result, { bootstrap: result.status !== "running" });
+  document.querySelectorAll("#dashboard [data-filter]").forEach((el) => prev[el.dataset.filter] != null && (el.value = prev[el.dataset.filter]));
+  enhanceDashboard($("#dashboard [data-dashboard]"));
+  updateButtons();
+}
+
+function download(name, text, type) {
+  const blob = new Blob([text], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => (URL.revokeObjectURL(a.href), a.remove()), 1000);
+}
+
+function baseName() {
+  const d = (result?.created_at || new Date().toISOString()).slice(0, 16).replace(/[:T]/g, "-");
+  return `tr24027-results-${d}`;
+}
+
+async function downloadReport() {
+  download(`${baseName()}.html`, buildReportHTML(result, await appCSS()), "text/html");
+}
+
+// CSS for the report: from the inline style in the single-file build, or from styles.css.
+async function appCSS() {
+  const inline = document.getElementById("app-css");
+  if (inline) return inline.textContent;
+  return (await fetch("styles.css")).text();
+}
+
+function downloadCSV() {
+  const c = computeResults(result, { bootstrap: false });
+  download(`${baseName()}.csv`, "﻿" + toCSV(c.rows, c.keys, c.names), "text/csv");
+}
+
+function downloadJSON() {
+  download(`${baseName()}.json`, JSON.stringify(result, null, 1), "application/json");
+}
+
+async function loadResultsFile(file) {
+  try {
+    const text = await file.text();
+    const r = /^\s*</.test(text) ? resultFromReportHTML(text) : JSON.parse(text);
+    if (!r || !Array.isArray(r.items) || !Array.isArray(r.models) || !r.raw || !r.settings) throw new Error("This file is not a results file from this tool.");
+    result = r;
+    if (result.status === "running") result.status = "incomplete";
+    showDashboard();
+    document.getElementById("results-section").scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    alert(`Could not load results: ${e.message}`);
+  }
+}
+
+// ---------------- helpers + wiring ----------------
+
+function escapeHTML(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function init() {
+  $("#context").value = DEFAULT_CONTEXT;
+  $("#system-prompt").value = DEFAULT_SYSTEM_PROMPT;
+  renderDefs();
+  $("#taxonomy").value = JSON.stringify(DEFAULT_TAXONOMY, null, 2);
+  $("#remember-keys").checked = !!store.get(KEYS_KEY);
+  const savedRoute = store.get(ROUTE_KEY);
+  if (savedRoute) {
+    $("#proxy-url").value = savedRoute.proxyUrl || "";
+    $("#encode").checked = savedRoute.encode !== false;
+    const radio = document.querySelector(`input[name="route"][value="${savedRoute.route}"]`);
+    if (radio) radio.checked = true;
+  }
+  $("#proxy-settings").hidden = readRoute().route !== "proxy";
+  renderModelRows();
+  updatePreview();
+
+  // Link to the source code: set once in index.html, <meta name="repository" content="https://github.com/…">
+  const repo = document.querySelector('meta[name="repository"]')?.content || "";
+  if (/^https:\/\/github\.com\/[^/]+\/[^/]+/.test(repo) && !repo.includes("/OWNER/")) $("#repo-link").href = repo;
+  else $("#repo-link").hidden = true;
+
+  // Served from the Vercel deployment: the proxy of this same site is the natural default.
+  if (location.protocol.startsWith("http") && !$("#proxy-url").value) $("#proxy-url").value = "/api/proxy";
+
+  // Single-file build: examples are embedded, so point the download link at the embedded copy.
+  const ex = globalThis.__TR24027_EXAMPLES__?.["data/ethical-ai-metaverse.json"];
+  if (ex) $("#example-download").href = URL.createObjectURL(new Blob([JSON.stringify(ex, null, 2)], { type: "application/json" }));
+  $("#example-download").setAttribute("download", "ethical-ai-metaverse.json");
+
+  $("#file-input").addEventListener("change", (e) => readFiles(e.target.files));
+  document.querySelectorAll("[data-example]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      try {
+        const embedded = globalThis.__TR24027_EXAMPLES__?.[b.dataset.example];
+        const data = embedded ? structuredClone(embedded) : await (await fetch(b.dataset.example)).json();
+        setInput(mergeInputs([{ name: b.dataset.example.split("/").pop(), data }]));
+      } catch (e) {
+        alert(`Could not load the example (${e.message}). If you opened index.html directly from disk, serve the folder instead — see README.`);
+      }
+    })
+  );
+  $("#demo-mode").addEventListener("change", renderModelRows);
+  $("#model-rows").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-load]");
+    if (b) return loadModels(b.dataset.load);
+    const rm = e.target.closest("[data-remove]");
+    if (rm && modelRows.length > 1) {
+      modelRows = modelRows.filter((r) => r.id !== rm.dataset.remove);
+      saveRows();
+      renderModelRows();
+    }
+  });
+  $("#model-rows").addEventListener("input", onModelRowsInput);
+  $("#model-rows").addEventListener("change", onModelRowsInput);
+  $("#add-model").addEventListener("click", addModelRow);
+  $("#reset-models").addEventListener("click", () => {
+    modelRows = structuredClone(DEFAULT_ROWS);
+    saveRows();
+    renderModelRows();
+  });
+  $("#remember-keys").addEventListener("change", saveKeysIfWanted);
+  document.querySelectorAll(".settings input, #shuffle").forEach((el) => el.addEventListener("input", updateEstimate));
+  document.querySelector(".advanced").addEventListener("input", updatePreview);
+  $("#context").addEventListener("input", updatePreview);
+  $("#reset-prompt").addEventListener("click", () => {
+    $("#system-prompt").value = DEFAULT_SYSTEM_PROMPT;
+    renderDefs();
+    $("#taxonomy").value = JSON.stringify(DEFAULT_TAXONOMY, null, 2);
+    readTaxonomy();
+    updatePreview();
+  });
+
+  document.querySelectorAll('input[name="route"], #encode').forEach((el) => el.addEventListener("change", onRouteChange));
+  $("#proxy-url").addEventListener("change", onRouteChange);
+  $("#check-proxy").addEventListener("click", checkProxy);
+  // On a web host (for example a Vercel project that also runs api/proxy.js), offer the site's own proxy.
+  if (location.protocol.startsWith("http")) {
+    $("#same-site-proxy").hidden = false;
+    $("#same-site-proxy").addEventListener("click", () => { $("#proxy-url").value = "/api/proxy"; onRouteChange(); checkProxy(); });
+  }
+  $("#include-drivers").addEventListener("change", updatePreview);
+  $("#inspector").addEventListener("toggle", () => $("#inspector").open && renderInspector());
+  document.querySelectorAll('input[name="insp-view"]').forEach((el) => el.addEventListener("change", renderInspector));
+  $("#insp-clear").addEventListener("click", () => {
+    records.length = 0;
+    $("#insp-count").textContent = "";
+    renderInspector();
+  });
+
+  $("#start").addEventListener("click", () => start());
+  $("#cancel").addEventListener("click", () => controller?.abort());
+  $("#resume").addEventListener("click", () => start({ resume: true }));
+  $("#dl-html").addEventListener("click", downloadReport);
+  $("#dl-csv").addEventListener("click", downloadCSV);
+  $("#dl-json").addEventListener("click", downloadJSON);
+  $("#load-results").addEventListener("change", (e) => e.target.files[0] && loadResultsFile(e.target.files[0]));
+
+  const saved = store.get(RUN_KEY);
+  if (saved && saved.status !== "complete") {
+    $("#resume-banner").hidden = false;
+    $("#resume-open").addEventListener("click", () => {
+      result = saved;
+      if (result.status === "running") result.status = "incomplete";
+      $("#resume-banner").hidden = true;
+      if (result.models.some((m) => m.providerId === "demo") !== $("#demo-mode").checked) {
+        $("#demo-mode").checked = result.models.some((m) => m.providerId === "demo");
+        renderModelRows();
+      }
+      showDashboard();
+      logLine("Loaded the unfinished run. Enter the same API keys, then press Resume.", "muted");
+    });
+    $("#resume-discard").addEventListener("click", () => {
+      store.del(RUN_KEY);
+      $("#resume-banner").hidden = true;
+    });
+  }
+}
+
+init();
+
+return {  };
+})();
+
+</script>
+</body>
+</html>
