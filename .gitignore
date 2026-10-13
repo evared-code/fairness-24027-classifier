@@ -10,3 +10,6 @@ tr24027-results-*.html
 # proxy secret key: never commit
 proxy/private-key.json
 .wrangler/
+
+# self made
+public/
